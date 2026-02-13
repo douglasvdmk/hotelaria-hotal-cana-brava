@@ -7,17 +7,19 @@ interface SidebarProps {
   currentPage: string;
   setCurrentPage: (page: string) => void;
   onLogout: () => void;
+  hotelName: string;
+  primaryColor: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout, hotelName, primaryColor }) => {
   return (
     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-full shadow-sm">
       <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-        <div className="bg-blue-600 p-2 rounded-lg text-white">
+        <div className="p-2 rounded-lg text-white" style={{ backgroundColor: primaryColor }}>
           <Hotel size={24} />
         </div>
         <div>
-          <h1 className="font-bold text-slate-800 tracking-tight">CANA BRAVA HOTEL</h1>
+          <h1 className="font-bold text-slate-800 tracking-tight leading-tight uppercase">{hotelName}</h1>
           <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Recepção</p>
         </div>
       </div>
@@ -29,11 +31,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout
             onClick={() => setCurrentPage(item.id)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
               currentPage === item.id 
-                ? 'bg-blue-50 text-blue-600 shadow-sm' 
+                ? 'bg-blue-50' 
                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
             }`}
+            style={currentPage === item.id ? { color: primaryColor, backgroundColor: `${primaryColor}10` } : {}}
           >
-            <span className={`${currentPage === item.id ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+            <span className={`${currentPage === item.id ? '' : 'text-slate-400 group-hover:text-slate-600'}`}>
               {item.icon}
             </span>
             <span className="font-medium">{item.label}</span>

@@ -11,7 +11,6 @@ import Notes from './pages/Notes';
 import Convenience from './pages/Convenience';
 import Settings from './pages/Settings';
 
-// Initial Mock Data
 const INITIAL_ROOMS: Room[] = [
   { id: '1', number: '101', type: RoomType.SIMPLE, status: RoomStatus.AVAILABLE, extraCharges: 0 },
   { id: '2', number: '102', type: RoomType.SIMPLE, status: RoomStatus.OCCUPIED, currentGuestId: 'g1', extraCharges: 0 },
@@ -45,6 +44,12 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
   
+  // App Config
+  const [hotelConfig, setHotelConfig] = useState({
+    name: 'CANA BRAVA HOTEL',
+    primaryColor: '#2563eb', // Blue-600
+  });
+
   // App State
   const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
   const [guests, setGuests] = useState<Guest[]>(INITIAL_GUESTS);
@@ -53,7 +58,6 @@ const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
 
-  // Persistent login for demo purposes
   useEffect(() => {
     const auth = localStorage.getItem('hotel_auth');
     if (auth === 'true') setIsAuthenticated(true);
@@ -86,7 +90,7 @@ const App: React.FC = () => {
   };
 
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+    return <Login onLogin={handleLogin} hotelName={hotelConfig.name} primaryColor={hotelConfig.primaryColor} />;
   }
 
   const renderPage = () => {
@@ -109,6 +113,7 @@ const App: React.FC = () => {
             rooms={rooms} 
             onAddPurchase={addPurchase}
             purchases={purchases}
+            primaryColor={hotelConfig.primaryColor}
           />
         );
       case 'settings':
@@ -116,6 +121,10 @@ const App: React.FC = () => {
           <Settings 
             rooms={rooms} 
             setRooms={setRooms} 
+            hotelConfig={hotelConfig}
+            setHotelConfig={setHotelConfig}
+            products={products}
+            setProducts={setProducts}
           />
         );
       default:
@@ -129,6 +138,8 @@ const App: React.FC = () => {
         currentPage={currentPage} 
         setCurrentPage={setCurrentPage} 
         onLogout={handleLogout} 
+        hotelName={hotelConfig.name}
+        primaryColor={hotelConfig.primaryColor}
       />
       <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50">
         <div className="max-w-7xl mx-auto">

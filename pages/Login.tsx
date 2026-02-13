@@ -4,9 +4,11 @@ import { Hotel, Lock, User } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (success: boolean) => void;
+  hotelName: string;
+  primaryColor: string;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, hotelName, primaryColor }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -24,10 +26,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
       <div className="bg-white p-8 md:p-12 rounded-[40px] shadow-2xl w-full max-w-md border border-white animate-in zoom-in duration-300">
         <div className="flex flex-col items-center mb-10">
-          <div className="bg-blue-600 p-4 rounded-3xl text-white shadow-xl shadow-blue-200 mb-6">
+          <div className="p-4 rounded-3xl text-white shadow-xl mb-6" style={{ backgroundColor: primaryColor, shadowColor: `${primaryColor}40` }}>
             <Hotel size={40} />
           </div>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tighter uppercase mb-2">Cana Brava Hotel</h1>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tighter uppercase mb-2 text-center leading-tight">{hotelName}</h1>
           <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Painel de Recepção</p>
         </div>
 
@@ -40,7 +42,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 type="text" 
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-50 transition-all font-semibold"
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 transition-all font-semibold"
+                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
                 placeholder="admin"
               />
             </div>
@@ -54,7 +57,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-50 transition-all font-semibold"
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 transition-all font-semibold"
+                style={{ '--tw-ring-color': `${primaryColor}20` } as any}
                 placeholder="••••••••"
               />
             </div>
@@ -64,7 +68,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
           <button 
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest py-5 rounded-2xl shadow-xl shadow-blue-100 transition-all active:scale-95 mt-4"
+            className="w-full text-white font-black uppercase tracking-widest py-5 rounded-2xl shadow-xl transition-all active:scale-95 mt-4"
+            style={{ backgroundColor: primaryColor }}
           >
             Acessar Sistema
           </button>
