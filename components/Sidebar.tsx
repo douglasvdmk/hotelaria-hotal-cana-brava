@@ -17,7 +17,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout
           <Hotel size={24} />
         </div>
         <div>
-          <h1 className="font-bold text-slate-800 tracking-tight">ZENITH HOTEL</h1>
+          <h1 className="font-bold text-slate-800 tracking-tight">CANA BRAVA HOTEL</h1>
           <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Recepção</p>
         </div>
       </div>

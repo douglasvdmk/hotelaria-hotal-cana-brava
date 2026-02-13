@@ -27,7 +27,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="bg-blue-600 p-4 rounded-3xl text-white shadow-xl shadow-blue-200 mb-6">
             <Hotel size={40} />
           </div>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tighter uppercase mb-2">Zenith Hotel</h1>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tighter uppercase mb-2">Cana Brava Hotel</h1>
           <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Painel de Recepção</p>
         </div>
 
