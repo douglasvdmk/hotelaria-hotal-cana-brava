@@ -140,7 +140,10 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
                     <div key={p.id} className="p-4 bg-black/20 border border-white/5 rounded-2xl flex justify-between items-center">
                       <div>
                         <p className="font-bold text-white">{p.name}</p>
-                        <p className="text-emerald-400 font-black text-sm">R$ {p.price.toFixed(2)}</p>
+                        <div className="flex items-center gap-3">
+                          <p className="text-emerald-400 font-black text-sm">R$ {p.price.toFixed(2)}</p>
+                          <span className="text-[10px] text-white/30 font-bold uppercase tracking-wider">Estoque: {p.stock}</span>
+                        </div>
                       </div>
                       <button onClick={() => setProducts(products.filter(item => item.id !== p.id))} className="p-2 text-white/30 hover:text-rose-400"><Trash2 size={18} /></button>
                     </div>

@@ -5,18 +5,20 @@ import { UserPlus, Search, Edit2, Trash2, Calendar, CreditCard, DollarSign } fro
 
 interface GuestsProps {
   guests: Guest[];
-  setGuests: React.Dispatch<React.SetStateAction<Guest[]>>;
+  onAddGuest: (guest: Guest) => void;
+  onUpdateGuest: (guest: Guest) => void;
   onDeleteGuest: (id: string) => void;
   rooms: Room[];
   prefilledData?: Partial<Guest> | null;
   onClearPrefilled?: () => void;
 }
 
-const Guests: React.FC<GuestsProps> = ({ guests, setGuests, onDeleteGuest, rooms, prefilledData, onClearPrefilled }) => {
+const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDeleteGuest, rooms, prefilledData, onClearPrefilled }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [guestToDelete, setGuestToDelete] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -83,15 +85,27 @@ const Guests: React.FC<GuestsProps> = ({ guests, setGuests, onDeleteGuest, rooms
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationError(null);
+
+    // Basic Validations
+    if (!formData.name || !formData.document || !formData.roomId || !formData.checkInDate) {
+      setValidationError('Por favor, preencha todos os campos obrigatórios (Nome, Documento, Quarto, Check-in).');
+      return;
+    }
+
+    if (formData.checkOutDate && formData.checkInDate > formData.checkOutDate) {
+      setValidationError('A data de check-out não pode ser anterior à data de check-in.');
+      return;
+    }
     
     if (editingId) {
-      setGuests(guests.map(g => g.id === editingId ? { ...g, ...formData } : g));
+      onUpdateGuest({ ...formData, id: editingId } as Guest);
     } else {
       const newGuest: Guest = {
         id: Math.random().toString(36).substr(2, 9),
         ...formData
-      };
-      setGuests([...guests, newGuest]);
+      } as Guest;
+      onAddGuest(newGuest);
     }
     
     setIsModalOpen(false);
@@ -115,11 +129,8 @@ const Guests: React.FC<GuestsProps> = ({ guests, setGuests, onDeleteGuest, rooms
       amountPaid: guest.amountPaid,
       notes: guest.notes
     });
+    setValidationError(null);
     setIsModalOpen(true);
-  };
-
-  const deleteGuest = (id: string) => {
-    setGuests(guests.filter(g => g.id !== id));
   };
 
   return (
@@ -242,6 +253,13 @@ const Guests: React.FC<GuestsProps> = ({ guests, setGuests, onDeleteGuest, rooms
               <h3 className="text-xl font-bold text-white mb-6">
                 {editingId ? 'Editar Registro de Hóspede' : 'Novo Registro de Hóspede'}
               </h3>
+              
+              {validationError && (
+                <div className="mb-6 p-4 bg-rose-500/20 border border-rose-500/30 rounded-2xl text-rose-200 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                  {validationError}
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-bold text-white/60 mb-2">Nome Completo</label>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NAV_ITEMS, BOTTOM_NAV_ITEMS } from '../constants';
-import { LogOut, Hotel } from 'lucide-react';
+import { LogOut, Hotel, X } from 'lucide-react';
 
 interface SidebarProps {
   currentPage: string;
@@ -9,20 +9,39 @@ interface SidebarProps {
   onLogout: () => void;
   hotelName: string;
   primaryColor: string;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout, hotelName, primaryColor }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout, hotelName, primaryColor, isOpen, setIsOpen }) => {
   return (
-    <aside className="w-64 bg-[#955251] border-r border-white/5 flex flex-col h-full shadow-sm text-white">
-      <div className="p-6 border-b border-white/5 flex items-center gap-3">
-        <div className="p-2 rounded-lg text-white" style={{ backgroundColor: primaryColor }}>
-          <Hotel size={24} />
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-all duration-300"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#955251] border-r border-white/5 flex flex-col h-full shadow-2xl lg:shadow-none text-white transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg text-white" style={{ backgroundColor: primaryColor }}>
+              <Hotel size={24} />
+            </div>
+            <div>
+              <h1 className="font-bold text-white tracking-tight leading-tight uppercase line-clamp-1">{hotelName}</h1>
+              <p className="text-[10px] text-white/50 font-medium uppercase tracking-widest">Recepção</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setIsOpen(false)}
+            className="lg:hidden p-2 text-white/40 hover:text-white"
+          >
+            <X size={20} />
+          </button>
         </div>
-        <div>
-          <h1 className="font-bold text-white tracking-tight leading-tight uppercase">{hotelName}</h1>
-          <p className="text-[10px] text-white/50 font-medium uppercase tracking-widest">Recepção</p>
-        </div>
-      </div>
 
       <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((item) => (
@@ -70,6 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout
         </button>
       </div>
     </aside>
+    </>
   );
 };
 

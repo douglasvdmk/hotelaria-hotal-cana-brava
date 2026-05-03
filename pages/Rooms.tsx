@@ -132,6 +132,16 @@ const Rooms: React.FC<RoomsProps> = ({ rooms, setRooms, guests, purchases, onChe
                 >
                   <Eraser size={14} className="shrink-0" /> <span className="truncate">Limpeza</span>
                 </button>
+                <button 
+                  onClick={() => updateStatus(room.id, RoomStatus.MAINTENANCE)}
+                  className={`flex items-center justify-center gap-2 py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                    room.status === RoomStatus.MAINTENANCE 
+                      ? 'bg-slate-600 text-white border-slate-400 shadow-lg' 
+                      : 'bg-black/20 text-white/40 border-transparent hover:border-slate-500/50 hover:text-white'
+                  }`}
+                >
+                  <Wrench size={14} className="shrink-0" /> <span className="truncate">Manut.</span>
+                </button>
               </div>
             </div>
           </div>

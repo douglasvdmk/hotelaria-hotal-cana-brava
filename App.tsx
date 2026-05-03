@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Room, Guest, Reservation, ReceptionNote, RoomStatus, RoomType, Product, Purchase, PaymentStatus, PaymentMethod } from './types';
+import { Hotel, LayoutGrid } from 'lucide-react';
 import Login from './pages/Login';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -21,10 +22,10 @@ const INITIAL_ROOMS: Room[] = [
 ];
 
 const INITIAL_PRODUCTS: Product[] = [
-  { id: 'p1', name: 'Água Mineral 500ml', price: 5.00 },
-  { id: 'p2', name: 'Cerveja Lata', price: 12.00 },
-  { id: 'p3', name: 'Chocolate 100g', price: 8.50 },
-  { id: 'p4', name: 'Salgadinho Pote', price: 10.00 },
+  { id: 'p1', name: 'Água Mineral 500ml', price: 5.00, stock: 50 },
+  { id: 'p2', name: 'Cerveja Lata', price: 12.00, stock: 24 },
+  { id: 'p3', name: 'Chocolate 100g', price: 8.50, stock: 15 },
+  { id: 'p4', name: 'Salgadinho Pote', price: 10.00, stock: 20 },
 ];
 
 const INITIAL_GUESTS: Guest[] = [
@@ -49,6 +50,7 @@ const INITIAL_GUESTS: Guest[] = [
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // App Config
   const [hotelConfig, setHotelConfig] = useState({
@@ -65,10 +67,45 @@ const App: React.FC = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [prefilledGuest, setPrefilledGuest] = useState<Partial<Guest> | null>(null);
 
+  // Persistence - Load from LocalStorage
   useEffect(() => {
     const auth = localStorage.getItem('hotel_auth');
     if (auth === 'true') setIsAuthenticated(true);
+
+    const savedConfig = localStorage.getItem('hotel_config');
+    if (savedConfig) setHotelConfig(JSON.parse(savedConfig));
+
+    const savedRooms = localStorage.getItem('hotel_rooms');
+    if (savedRooms) setRooms(JSON.parse(savedRooms));
+
+    const savedGuests = localStorage.getItem('hotel_guests');
+    if (savedGuests) setGuests(JSON.parse(savedGuests));
+
+    const savedReservations = localStorage.getItem('hotel_reservations');
+    if (savedReservations) setReservations(JSON.parse(savedReservations));
+
+    const savedNotes = localStorage.getItem('hotel_notes');
+    if (savedNotes) setNotes(JSON.parse(savedNotes));
+
+    const savedProducts = localStorage.getItem('hotel_products');
+    if (savedProducts) setProducts(JSON.parse(savedProducts));
+
+    const savedPurchases = localStorage.getItem('hotel_purchases');
+    if (savedPurchases) setPurchases(JSON.parse(savedPurchases));
   }, []);
+
+  // Persistence - Save to LocalStorage
+  useEffect(() => {
+    if (isAuthenticated) {
+      localStorage.setItem('hotel_config', JSON.stringify(hotelConfig));
+      localStorage.setItem('hotel_rooms', JSON.stringify(rooms));
+      localStorage.setItem('hotel_guests', JSON.stringify(guests));
+      localStorage.setItem('hotel_reservations', JSON.stringify(reservations));
+      localStorage.setItem('hotel_notes', JSON.stringify(notes));
+      localStorage.setItem('hotel_products', JSON.stringify(products));
+      localStorage.setItem('hotel_purchases', JSON.stringify(purchases));
+    }
+  }, [hotelConfig, rooms, guests, reservations, notes, products, purchases, isAuthenticated]);
 
   const handleLogin = (success: boolean) => {
     if (success) {
@@ -89,11 +126,46 @@ const App: React.FC = () => {
       timestamp: Date.now(),
     };
     setPurchases(prev => [...prev, newPurchase]);
+    setProducts(prev => prev.map(p => 
+      p.id === purchase.productId ? { ...p, stock: Math.max(0, p.stock - 1) } : p
+    ));
     setRooms(prevRooms => prevRooms.map(room => 
       room.id === purchase.roomId 
-        ? { ...room, extraCharges: room.extraCharges + purchase.price }
+        ? { ...room, extraCharges: (room.extraCharges || 0) + purchase.price }
         : room
     ));
+  };
+
+  const handleAddGuest = (newGuest: Guest) => {
+    setGuests(prev => [...prev, newGuest]);
+    if (newGuest.roomId) {
+      setRooms(prev => prev.map(r => r.id === newGuest.roomId ? { 
+        ...r, 
+        status: RoomStatus.OCCUPIED, 
+        currentGuestId: newGuest.id 
+      } : r));
+    }
+  };
+
+  const handleUpdateGuest = (updatedGuest: Guest) => {
+    const oldGuest = guests.find(g => g.id === updatedGuest.id);
+    setGuests(prev => prev.map(g => g.id === updatedGuest.id ? updatedGuest : g));
+
+    if (oldGuest && oldGuest.roomId !== updatedGuest.roomId) {
+      // Room changed
+      setRooms(prev => prev.map(r => {
+        if (r.id === oldGuest.roomId) return { ...r, status: RoomStatus.AVAILABLE, currentGuestId: undefined };
+        if (r.id === updatedGuest.roomId) return { ...r, status: RoomStatus.OCCUPIED, currentGuestId: updatedGuest.id };
+        return r;
+      }));
+    } else if (updatedGuest.roomId) {
+      // Ensure room is marked occupied
+      setRooms(prev => prev.map(r => r.id === updatedGuest.roomId ? { 
+        ...r, 
+        status: RoomStatus.OCCUPIED, 
+        currentGuestId: updatedGuest.id 
+      } : r));
+    }
   };
 
   const handleAddReservation = (res: Reservation) => {
@@ -158,6 +230,27 @@ const App: React.FC = () => {
     } : r));
   };
 
+  const handleConfirmReservation = (res: Reservation) => {
+    setPrefilledGuest({
+      name: res.guestName,
+      document: res.document,
+      phone: res.phone,
+      email: res.email,
+      checkInDate: res.date,
+      checkInTime: res.time,
+      roomId: res.roomId,
+      paymentStatus: res.paymentStatus,
+      paymentMethod: res.paymentMethod,
+      amountPaid: res.amountPaid,
+      notes: res.notes || ''
+    });
+    
+    // Update reservation status to Confirmed if we are moving to check-in
+    setReservations(prev => prev.map(r => r.id === res.id ? { ...r, status: 'Confirmed' } : r));
+    
+    setCurrentPage('guests');
+  };
+
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} hotelName={hotelConfig.name} primaryColor={hotelConfig.primaryColor} />;
   }
@@ -170,7 +263,8 @@ const App: React.FC = () => {
         return (
           <Guests 
             guests={guests} 
-            setGuests={setGuests} 
+            onAddGuest={handleAddGuest}
+            onUpdateGuest={handleUpdateGuest}
             onDeleteGuest={handleDeleteGuest}
             rooms={rooms} 
             prefilledData={prefilledGuest} 
@@ -228,15 +322,35 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-black">
       <Sidebar 
         currentPage={currentPage} 
-        setCurrentPage={setCurrentPage} 
+        setCurrentPage={(page) => {
+          setCurrentPage(page);
+          setIsSidebarOpen(false);
+        }} 
         onLogout={handleLogout} 
         hotelName={hotelConfig.name}
         primaryColor={hotelConfig.primaryColor}
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
       />
-      <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-black">
+      
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">
+        {/* Mobile Header */}
+        <div className="lg:hidden flex items-center justify-between mb-6 bg-[#955251] p-4 rounded-2xl border border-white/10 text-white">
+          <div className="flex items-center gap-3">
+            <Hotel className="text-white" />
+            <h1 className="font-black text-sm tracking-tighter uppercase">{hotelConfig.name}</h1>
+          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 bg-white/10 rounded-xl"
+          >
+            <LayoutGrid size={24} />
+          </button>
+        </div>
+
         <div className="max-w-7xl mx-auto">
           {renderPage()}
         </div>

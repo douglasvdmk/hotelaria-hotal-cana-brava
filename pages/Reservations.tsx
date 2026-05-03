@@ -16,6 +16,7 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [resToDelete, setResToDelete] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [newRes, setNewRes] = useState({
     guestName: '',
     document: '',
@@ -51,6 +52,26 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
 
   const addReservation = (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationError(null);
+
+    if (!newRes.guestName || !newRes.date || !newRes.roomId) {
+      setValidationError('Por favor, preencha o Nome, Data e Quarto.');
+      return;
+    }
+
+    // Check for room conflicts on the same date
+    const conflict = reservations.find(r => 
+      r.roomId === newRes.roomId && 
+      r.date === newRes.date && 
+      r.id !== editingId &&
+      r.status !== 'Canceled'
+    );
+
+    if (conflict) {
+      const roomNum = rooms.find(rm => rm.id === newRes.roomId)?.number;
+      setValidationError(`O Quarto ${roomNum} já possui uma reserva ativa para o dia ${new Date(newRes.date + 'T00:00:00').toLocaleDateString('pt-BR')}.`);
+      return;
+    }
     
     if (editingId) {
       onUpdateReservation({ ...newRes, id: editingId });
@@ -212,6 +233,13 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
             <h3 className="text-2xl font-black text-white mb-8 tracking-tighter uppercase">
               {editingId ? 'Editar Reserva' : 'Agendar Reserva'}
             </h3>
+
+            {validationError && (
+              <div className="mb-6 p-4 bg-rose-500/20 border border-rose-500/30 rounded-2xl text-rose-200 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                {validationError}
+              </div>
+            )}
+
             <form onSubmit={addReservation} className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="md:col-span-2">
                 <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Nome do Hóspede</label>

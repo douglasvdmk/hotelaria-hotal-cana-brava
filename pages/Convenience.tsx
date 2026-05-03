@@ -16,18 +16,20 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
-  const [newProduct, setNewProduct] = useState({ name: '', price: '' });
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', stock: '' });
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProduct.name || !newProduct.price) return;
+    if (!newProduct.name || !newProduct.price || !newProduct.stock) return;
     const product: Product = {
       id: Math.random().toString(36).substr(2, 9),
       name: newProduct.name,
-      price: parseFloat(newProduct.price)
+      price: parseFloat(newProduct.price),
+      stock: parseInt(newProduct.stock)
     };
     setProducts([...products, product]);
-    setNewProduct({ name: '', price: '' });
+    setNewProduct({ name: '', price: '', stock: '' });
     setIsAddProductModalOpen(false);
   };
 
@@ -35,8 +37,17 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
     e.preventDefault();
     const product = products.find(p => p.id === selectedProductId);
     if (!selectedRoomId || !product) return;
+    
+    if (product.stock <= 0) {
+      alert('Sem estoque disponível para este produto.');
+      return;
+    }
+
     onAddPurchase({ roomId: selectedRoomId, productId: product.id, productName: product.name, price: product.price });
-    alert(`R$ ${product.price.toFixed(2)} lançados no quarto com sucesso.`);
+    
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+    
     setSelectedProductId('');
   };
 
@@ -63,6 +74,13 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
             <h3 className="text-xl font-black mb-6 flex items-center gap-2 tracking-tighter text-white">
               <ShoppingCart size={24} /> LANÇAR EXTRA
             </h3>
+
+            {showSuccess && (
+              <div className="mb-4 p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-bold text-center animate-in fade-in zoom-in">
+                Lançamento realizado com sucesso!
+              </div>
+            )}
+
             <form onSubmit={handlePurchase} className="space-y-5">
               <div>
                 <label className="block text-[10px] font-black opacity-70 uppercase tracking-widest mb-2 text-white">Quarto Ocupado</label>
@@ -75,7 +93,11 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
                 <label className="block text-[10px] font-black opacity-70 uppercase tracking-widest mb-2 text-white">Produto</label>
                 <select required value={selectedProductId} onChange={e => setSelectedProductId(e.target.value)} className="w-full bg-black/30 border border-white/20 text-white rounded-2xl p-4 outline-none font-bold">
                   <option value="" className="bg-slate-800">Selecionar...</option>
-                  {products.map(p => <option key={p.id} value={p.id} className="bg-slate-800">{p.name} - R$ {p.price.toFixed(2)}</option>)}
+                  {products.map(p => (
+                    <option key={p.id} value={p.id} className="bg-slate-800" disabled={p.stock <= 0}>
+                      {p.name} - R$ {p.price.toFixed(2)} ({p.stock} em estoque)
+                    </option>
+                  ))}
                 </select>
               </div>
               <button type="submit" disabled={!selectedRoomId || !selectedProductId} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg hover:bg-blue-700 disabled:opacity-50 transition-all border-none">
@@ -95,7 +117,12 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
                 <div key={p.id} className="p-4 border border-white/5 rounded-2xl flex justify-between items-center bg-black/10">
                   <div>
                     <p className="font-bold text-white">{p.name}</p>
-                    <p className="text-emerald-400 font-black text-sm">R$ {p.price.toFixed(2)}</p>
+                    <div className="flex items-center gap-2">
+                       <p className="text-emerald-400 font-black text-sm">R$ {p.price.toFixed(2)}</p>
+                       <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase ${p.stock <= 5 ? 'bg-rose-500/20 text-rose-300' : 'bg-white/5 text-white/40'}`}>
+                         ESTOQUE: {p.stock}
+                       </span>
+                    </div>
                   </div>
                   <Tag size={16} className="text-white/20" />
                 </div>
@@ -111,7 +138,10 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
             <h3 className="text-2xl font-black text-white mb-8 uppercase">Novo Produto</h3>
             <form onSubmit={handleAddProduct} className="space-y-6">
               <input required type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Nome do item" />
-              <input required type="number" step="0.01" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Preço R$" />
+              <div className="grid grid-cols-2 gap-4">
+                <input required type="number" step="0.01" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Preço R$" />
+                <input required type="number" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Estoque Inicial" />
+              </div>
               <div className="flex gap-4">
                 <button type="button" onClick={() => setIsAddProductModalOpen(false)} className="flex-1 font-bold text-white/50">Voltar</button>
                 <button type="submit" className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg hover:bg-blue-700">Salvar</button>
