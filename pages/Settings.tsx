@@ -33,34 +33,34 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 text-white">
       <header>
-        <h2 className="text-2xl font-bold text-slate-800">Painel de Controle Total</h2>
-        <p className="text-slate-500 font-medium">Personalize cada aspecto do Cana Brava Hotel.</p>
+        <h2 className="text-2xl font-bold text-white">Painel de Controle Total</h2>
+        <p className="text-white/60 font-medium">Personalize cada aspecto do Cana Brava Hotel.</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Navigation Tabs */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="bg-white p-4 rounded-[32px] border border-slate-100 shadow-sm space-y-2">
+          <div className="bg-[#955251] p-4 rounded-[32px] border border-white/5 shadow-sm space-y-2">
             <button 
               onClick={() => setActiveTab('hotel')}
-              className={`w-full text-left px-5 py-3 rounded-2xl font-bold flex items-center gap-3 transition-all ${activeTab === 'hotel' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-slate-400 hover:bg-slate-50'}`}
-              style={activeTab === 'hotel' ? { color: hotelConfig.primaryColor, backgroundColor: `${hotelConfig.primaryColor}10` } : {}}
+              className={`w-full text-left px-5 py-3 rounded-2xl font-bold flex items-center gap-3 transition-all ${activeTab === 'hotel' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:bg-white/5'}`}
+              style={activeTab === 'hotel' ? { color: '#fff', backgroundColor: 'rgba(255, 255, 255, 0.1)' } : {}}
             >
               <Palette size={18} /> Identidade Visual
             </button>
             <button 
               onClick={() => setActiveTab('rooms')}
-              className={`w-full text-left px-5 py-3 rounded-2xl font-bold flex items-center gap-3 transition-all ${activeTab === 'rooms' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-slate-400 hover:bg-slate-50'}`}
-              style={activeTab === 'rooms' ? { color: hotelConfig.primaryColor, backgroundColor: `${hotelConfig.primaryColor}10` } : {}}
+              className={`w-full text-left px-5 py-3 rounded-2xl font-bold flex items-center gap-3 transition-all ${activeTab === 'rooms' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:bg-white/5'}`}
+              style={activeTab === 'rooms' ? { color: '#fff', backgroundColor: 'rgba(255, 255, 255, 0.1)' } : {}}
             >
               <Layout size={18} /> Gestão de Quartos
             </button>
             <button 
               onClick={() => setActiveTab('products')}
-              className={`w-full text-left px-5 py-3 rounded-2xl font-bold flex items-center gap-3 transition-all ${activeTab === 'products' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-slate-400 hover:bg-slate-50'}`}
-              style={activeTab === 'products' ? { color: hotelConfig.primaryColor, backgroundColor: `${hotelConfig.primaryColor}10` } : {}}
+              className={`w-full text-left px-5 py-3 rounded-2xl font-bold flex items-center gap-3 transition-all ${activeTab === 'products' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:bg-white/5'}`}
+              style={activeTab === 'products' ? { color: '#fff', backgroundColor: 'rgba(255, 255, 255, 0.1)' } : {}}
             >
               <Store size={18} /> Catálogo da Loja
             </button>
@@ -69,23 +69,23 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
 
         {/* Content Area */}
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-[#955251] rounded-[40px] border border-white/5 shadow-sm overflow-hidden border border-white/5">
             {activeTab === 'hotel' && (
               <div className="p-10 space-y-8">
-                <h3 className="text-xl font-bold text-slate-800">Informações do Hotel</h3>
+                <h3 className="text-xl font-bold text-white">Informações do Hotel</h3>
                 <div className="grid grid-cols-1 gap-6">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-3">Nome Exibido</label>
+                    <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-3">Nome Exibido</label>
                     <input 
                       type="text" 
                       value={hotelConfig.name}
                       onChange={(e) => setHotelConfig({...hotelConfig, name: e.target.value.toUpperCase()})}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 outline-none transition-all"
+                      className="w-full px-6 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold focus:ring-4 outline-none transition-all text-white"
                       style={{ '--tw-ring-color': `${hotelConfig.primaryColor}20` } as any}
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-3">Cor de Destaque</label>
+                    <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-3">Cor de Destaque</label>
                     <div className="flex gap-4 items-center">
                       <input 
                         type="color" 
@@ -93,7 +93,7 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
                         onChange={(e) => setHotelConfig({...hotelConfig, primaryColor: e.target.value})}
                         className="w-20 h-20 rounded-2xl border-none cursor-pointer p-0"
                       />
-                      <p className="font-mono font-bold text-slate-500">{hotelConfig.primaryColor}</p>
+                      <p className="font-mono font-bold text-white/60">{hotelConfig.primaryColor}</p>
                     </div>
                   </div>
                 </div>
@@ -102,8 +102,8 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
 
             {activeTab === 'rooms' && (
               <div>
-                <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-                  <h3 className="text-xl font-bold text-slate-800">Quartos Cadastrados ({rooms.length})</h3>
+                <div className="p-8 border-b border-white/5 flex justify-between items-center text-white">
+                  <h3 className="text-xl font-bold">Quartos Cadastrados ({rooms.length})</h3>
                   <button 
                     onClick={() => setIsAddRoomOpen(true)}
                     className="text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"
@@ -114,16 +114,16 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
                 </div>
                 <div className="p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {rooms.map(room => (
-                    <div key={room.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center">
+                    <div key={room.id} className="p-4 bg-black/20 border border-white/5 rounded-2xl flex justify-between items-center">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center font-black text-slate-700 border border-slate-100">
+                        <div className="w-12 h-12 bg-black/30 rounded-xl flex items-center justify-center font-black text-white border border-white/5">
                           {room.number}
                         </div>
                         <div>
-                          <p className="text-xs font-black text-slate-400 uppercase tracking-wider">{room.type}</p>
+                          <p className="text-xs font-black text-white/40 uppercase tracking-wider">{room.type}</p>
                         </div>
                       </div>
-                      <button onClick={() => setRooms(rooms.filter(r => r.id !== room.id))} className="p-2 text-slate-300 hover:text-rose-500"><Trash2 size={18} /></button>
+                      <button onClick={() => setRooms(rooms.filter(r => r.id !== room.id))} className="p-2 text-white/30 hover:text-rose-400"><Trash2 size={18} /></button>
                     </div>
                   ))}
                 </div>
@@ -132,20 +132,20 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
 
             {activeTab === 'products' && (
               <div>
-                <div className="p-8 border-b border-slate-100">
-                  <h3 className="text-xl font-bold text-slate-800">Gestão de Inventário</h3>
+                <div className="p-8 border-b border-white/5">
+                  <h3 className="text-xl font-bold text-white">Gestão de Inventário</h3>
                 </div>
                 <div className="p-8 space-y-4">
                   {products.map(p => (
-                    <div key={p.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center">
+                    <div key={p.id} className="p-4 bg-black/20 border border-white/5 rounded-2xl flex justify-between items-center">
                       <div>
-                        <p className="font-bold text-slate-800">{p.name}</p>
-                        <p className="text-emerald-600 font-black text-sm">R$ {p.price.toFixed(2)}</p>
+                        <p className="font-bold text-white">{p.name}</p>
+                        <p className="text-emerald-400 font-black text-sm">R$ {p.price.toFixed(2)}</p>
                       </div>
-                      <button onClick={() => setProducts(products.filter(item => item.id !== p.id))} className="p-2 text-slate-300 hover:text-rose-500"><Trash2 size={18} /></button>
+                      <button onClick={() => setProducts(products.filter(item => item.id !== p.id))} className="p-2 text-white/30 hover:text-rose-400"><Trash2 size={18} /></button>
                     </div>
                   ))}
-                  {products.length === 0 && <p className="text-center py-10 text-slate-400 italic">Nenhum produto cadastrado.</p>}
+                  {products.length === 0 && <p className="text-center py-10 text-white/30 italic">Nenhum produto cadastrado.</p>}
                 </div>
               </div>
             )}
@@ -154,22 +154,22 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
       </div>
 
       {isAddRoomOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-          <div className="bg-white rounded-[40px] w-full max-w-md shadow-2xl p-10">
-            <h3 className="text-2xl font-black text-slate-800 mb-8 tracking-tighter uppercase">Adicionar Unidade</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#955251] rounded-[40px] w-full max-w-md shadow-2xl p-10 border border-white/10">
+            <h3 className="text-2xl font-black text-white mb-8 tracking-tighter uppercase">Adicionar Unidade</h3>
             <form onSubmit={handleAddRoom} className="space-y-6">
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Número</label>
-                <input required type="text" value={newRoom.number} onChange={e => setNewRoom({...newRoom, number: e.target.value})} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold" />
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Número</label>
+                <input required type="text" value={newRoom.number} onChange={e => setNewRoom({...newRoom, number: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] mb-2">Tipo</label>
-                <select required value={newRoom.type} onChange={e => setNewRoom({...newRoom, type: e.target.value as RoomType})} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold">
-                  {Object.values(RoomType).map(type => <option key={type} value={type}>{type}</option>)}
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Tipo</label>
+                <select required value={newRoom.type} onChange={e => setNewRoom({...newRoom, type: e.target.value as RoomType})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white">
+                  {Object.values(RoomType).map(type => <option key={type} value={type} className="bg-slate-800">{type}</option>)}
                 </select>
               </div>
               <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setIsAddRoomOpen(false)} className="flex-1 px-6 py-4 font-bold text-slate-500">Voltar</button>
+                <button type="button" onClick={() => setIsAddRoomOpen(false)} className="flex-1 px-6 py-4 font-bold text-white/50">Voltar</button>
                 <button type="submit" className="flex-1 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg" style={{ backgroundColor: hotelConfig.primaryColor }}>Salvar</button>
               </div>
             </form>

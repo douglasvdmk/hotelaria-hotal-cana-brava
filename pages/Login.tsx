@@ -23,26 +23,26 @@ const Login: React.FC<LoginProps> = ({ onLogin, hotelName, primaryColor }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="bg-white p-8 md:p-12 rounded-[40px] shadow-2xl w-full max-w-md border border-white animate-in zoom-in duration-300">
+    <div className="min-h-screen bg-black flex items-center justify-center p-6 text-white">
+      <div className="bg-[#955251] p-8 md:p-12 rounded-[40px] shadow-2xl w-full max-w-md border border-[#a66362] animate-in zoom-in duration-300">
         <div className="flex flex-col items-center mb-10">
           <div className="p-4 rounded-3xl text-white shadow-xl mb-6" style={{ backgroundColor: primaryColor, shadowColor: `${primaryColor}40` }}>
             <Hotel size={40} />
           </div>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tighter uppercase mb-2 text-center leading-tight">{hotelName}</h1>
-          <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Painel de Recepção</p>
+          <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-2 text-center leading-tight">{hotelName}</h1>
+          <p className="text-white/60 font-bold text-xs uppercase tracking-widest">Painel de Recepção</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Usuário</label>
+            <label className="text-[10px] font-black text-white/50 uppercase tracking-widest ml-1">Usuário</label>
             <div className="relative">
-              <User size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+              <User size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
               <input 
                 type="text" 
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 transition-all font-semibold"
+                className="w-full pl-12 pr-4 py-4 bg-black/30 border border-white/10 rounded-2xl outline-none focus:ring-4 transition-all font-semibold text-white placeholder:text-white/20"
                 style={{ '--tw-ring-color': `${primaryColor}20` } as any}
                 placeholder="admin"
               />
@@ -50,14 +50,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, hotelName, primaryColor }) => {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Senha</label>
+            <label className="text-[10px] font-black text-white/50 uppercase tracking-widest ml-1">Senha</label>
             <div className="relative">
-              <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+              <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
               <input 
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 transition-all font-semibold"
+                className="w-full pl-12 pr-4 py-4 bg-black/30 border border-white/10 rounded-2xl outline-none focus:ring-4 transition-all font-semibold text-white placeholder:text-white/20"
                 style={{ '--tw-ring-color': `${primaryColor}20` } as any}
                 placeholder="••••••••"
               />
@@ -75,8 +75,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, hotelName, primaryColor }) => {
           </button>
         </form>
 
-        <p className="mt-10 text-center text-slate-400 text-xs font-medium">
-          Dica: Usuário e senha padrão são <span className="font-bold text-slate-600">admin</span>
+        <p className="mt-10 text-center text-white/40 text-xs font-medium">
+          Dica: Usuário e senha padrão são <span className="font-bold text-white/70">admin</span>
         </p>
       </div>
     </div>

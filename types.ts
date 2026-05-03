@@ -3,7 +3,20 @@ export enum RoomStatus {
   AVAILABLE = 'AVAILABLE',
   OCCUPIED = 'OCCUPIED',
   CLEANING = 'CLEANING',
-  MAINTENANCE = 'MAINTENANCE'
+  MAINTENANCE = 'MAINTENANCE',
+  RESERVED = 'RESERVED'
+}
+
+export enum PaymentStatus {
+  PAID = 'Pago',
+  PENDING = 'Pendente',
+}
+
+export enum PaymentMethod {
+  PIX = 'PIX',
+  CASH = 'Dinheiro',
+  CREDIT = 'Crédito',
+  DEBIT = 'Débito',
 }
 
 export enum RoomType {
@@ -28,17 +41,30 @@ export interface Guest {
   phone: string;
   email: string;
   checkInDate: string;
+  checkInTime: string;
   checkOutDate: string;
+  checkOutTime: string;
   roomId: string;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  amountPaid: number;
+  notes: string;
 }
 
 export interface Reservation {
   id: string;
   guestName: string;
+  document: string;
+  phone: string;
+  email: string;
   date: string;
+  time: string;
   roomId: string;
   status: 'Confirmed' | 'Pending' | 'Cancelled';
   notes: string;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  amountPaid: number;
 }
 
 export interface ReceptionNote {

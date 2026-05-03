@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Room, Guest, Reservation, ReceptionNote, RoomStatus, RoomType, Product, Purchase } from './types';
+import { Room, Guest, Reservation, ReceptionNote, RoomStatus, RoomType, Product, Purchase, PaymentStatus, PaymentMethod } from './types';
 import Login from './pages/Login';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -35,8 +35,14 @@ const INITIAL_GUESTS: Guest[] = [
     phone: '(11) 98888-7777', 
     email: 'joao@email.com', 
     checkInDate: '2023-10-20', 
+    checkInTime: '14:00',
     checkOutDate: '2023-10-25', 
-    roomId: '2' 
+    checkOutTime: '12:00',
+    roomId: '2',
+    paymentStatus: PaymentStatus.PENDING,
+    paymentMethod: PaymentMethod.PIX,
+    amountPaid: 0,
+    notes: ''
   }
 ];
 
@@ -57,6 +63,7 @@ const App: React.FC = () => {
   const [notes, setNotes] = useState<ReceptionNote[]>([]);
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [prefilledGuest, setPrefilledGuest] = useState<Partial<Guest> | null>(null);
 
   useEffect(() => {
     const auth = localStorage.getItem('hotel_auth');
@@ -89,6 +96,68 @@ const App: React.FC = () => {
     ));
   };
 
+  const handleAddReservation = (res: Reservation) => {
+    setReservations(prev => [...prev, res]);
+    if (res.roomId) {
+      setRooms(prev => prev.map(r => r.id === res.roomId ? { ...r, status: RoomStatus.RESERVED } : r));
+    }
+  };
+
+  const handleUpdateReservation = (updatedRes: Reservation) => {
+    const oldRes = reservations.find(r => r.id === updatedRes.id);
+    setReservations(prev => prev.map(r => r.id === updatedRes.id ? updatedRes : r));
+    
+    if (oldRes && oldRes.roomId !== updatedRes.roomId) {
+      setRooms(prev => prev.map(r => {
+        if (r.id === oldRes.roomId) return { ...r, status: RoomStatus.AVAILABLE };
+        if (r.id === updatedRes.roomId) return { ...r, status: RoomStatus.RESERVED };
+        return r;
+      }));
+    } else if (updatedRes.roomId) {
+      setRooms(prev => prev.map(r => r.id === updatedRes.roomId ? { ...r, status: RoomStatus.RESERVED } : r));
+    }
+  };
+
+  const handleDeleteReservation = (id: string) => {
+    const res = reservations.find(r => r.id === id);
+    setReservations(prev => prev.filter(r => r.id !== id));
+    if (res && res.roomId) {
+      setRooms(prev => prev.map(r => r.id === res.roomId ? { ...r, status: RoomStatus.AVAILABLE } : r));
+    }
+  };
+
+  const handleDeleteGuest = (id: string) => {
+    const guest = guests.find(g => g.id === id);
+    setGuests(prev => prev.filter(g => g.id !== id));
+    if (guest && guest.roomId) {
+      setRooms(prev => prev.map(r => r.id === guest.roomId ? { ...r, status: RoomStatus.AVAILABLE } : r));
+    }
+  };
+
+  const handleCheckOut = (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId);
+    if (!room || !room.currentGuestId) return;
+
+    // Update guest with current time as checkout
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    setGuests(prev => prev.map(g => g.id === room.currentGuestId ? {
+      ...g,
+      checkOutDate: dateStr,
+      checkOutTime: timeStr
+    } : g));
+
+    // Update room status to CLEANING and clear guest/charges
+    setRooms(prev => prev.map(r => r.id === roomId ? {
+      ...r,
+      status: RoomStatus.CLEANING,
+      currentGuestId: undefined,
+      extraCharges: 0
+    } : r));
+  };
+
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} hotelName={hotelConfig.name} primaryColor={hotelConfig.primaryColor} />;
   }
@@ -96,13 +165,39 @@ const App: React.FC = () => {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard rooms={rooms} guests={guests} setRooms={setRooms} setGuests={setGuests} />;
+        return <Dashboard rooms={rooms} guests={guests} setRooms={setRooms} setGuests={setGuests} onNavigate={setCurrentPage} />;
       case 'guests':
-        return <Guests guests={guests} setGuests={setGuests} rooms={rooms} />;
+        return (
+          <Guests 
+            guests={guests} 
+            setGuests={setGuests} 
+            onDeleteGuest={handleDeleteGuest}
+            rooms={rooms} 
+            prefilledData={prefilledGuest} 
+            onClearPrefilled={() => setPrefilledGuest(null)} 
+          />
+        );
       case 'rooms':
-        return <Rooms rooms={rooms} setRooms={setRooms} />;
+        return (
+          <Rooms 
+            rooms={rooms} 
+            setRooms={setRooms} 
+            guests={guests} 
+            purchases={purchases}
+            onCheckOut={handleCheckOut}
+          />
+        );
       case 'reservations':
-        return <Reservations reservations={reservations} setReservations={setReservations} rooms={rooms} />;
+        return (
+          <Reservations 
+            reservations={reservations} 
+            onAddReservation={handleAddReservation}
+            onUpdateReservation={handleUpdateReservation}
+            onDeleteReservation={handleDeleteReservation}
+            rooms={rooms} 
+            onConfirm={handleConfirmReservation}
+          />
+        );
       case 'notes':
         return <Notes notes={notes} setNotes={setNotes} />;
       case 'convenience':
@@ -141,7 +236,7 @@ const App: React.FC = () => {
         hotelName={hotelConfig.name}
         primaryColor={hotelConfig.primaryColor}
       />
-      <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-black">
         <div className="max-w-7xl mx-auto">
           {renderPage()}
         </div>

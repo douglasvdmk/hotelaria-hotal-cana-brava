@@ -1,81 +1,276 @@
 
-import React from 'react';
-import { Room, RoomStatus } from '../types';
+import React, { useState } from 'react';
+import { Room, RoomStatus, Guest, Purchase, RoomType } from '../types';
 import { STATUS_COLORS, STATUS_LABELS } from '../constants';
-import { RefreshCw, Wrench, Eraser, Check, ShoppingCart } from 'lucide-react';
+import { RefreshCw, Wrench, Eraser, Check, ShoppingCart, Calendar, User, Phone, Mail, FileText, Receipt, CheckCircle, X } from 'lucide-react';
 
 interface RoomsProps {
   rooms: Room[];
   setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
+  guests: Guest[];
+  purchases: Purchase[];
+  onCheckOut: (roomId: string) => void;
 }
 
-const Rooms: React.FC<RoomsProps> = ({ rooms, setRooms }) => {
+const ROOM_PRICES = {
+  [RoomType.SIMPLE]: 150,
+  [RoomType.DOUBLE]: 250,
+  [RoomType.SUITE]: 450
+};
+
+const Rooms: React.FC<RoomsProps> = ({ rooms, setRooms, guests, purchases, onCheckOut }) => {
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+
   const updateStatus = (id: string, newStatus: RoomStatus) => {
     setRooms(rooms.map(r => r.id === id ? { ...r, status: newStatus } : r));
   };
 
+  const selectedRoom = rooms.find(r => r.id === selectedRoomId);
+  const currentGuest = selectedRoom?.currentGuestId ? guests.find(g => g.id === selectedRoom.currentGuestId) : null;
+  const roomPurchases = selectedRoom ? purchases.filter(p => p.roomId === selectedRoom.id) : [];
+
+  const calculateDays = (checkIn: string) => {
+    if (!checkIn) return 1;
+    const start = new Date(checkIn);
+    const end = new Date();
+    const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return diff <= 0 ? 1 : diff;
+  };
+
+  const days = currentGuest ? calculateDays(currentGuest.checkInDate) : 0;
+  const roomTotal = selectedRoom ? ROOM_PRICES[selectedRoom.type] * days : 0;
+  const grandTotal = roomTotal + (selectedRoom?.extraCharges || 0);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-white pb-20">
       <header>
-        <h2 className="text-2xl font-bold text-slate-800">Controle de Quartos</h2>
-        <p className="text-slate-500">Monitore o status de limpeza e disponibilidade em tempo real.</p>
+        <h2 className="text-2xl font-bold text-white">Controle de Quartos</h2>
+        <p className="text-white/60">Monitore o status de limpeza e disponibilidade em tempo real.</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {rooms.map((room) => (
-          <div key={room.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 hover:shadow-md transition-shadow group flex flex-col">
-            <div className="flex justify-between items-start mb-4">
+          <div 
+            key={room.id} 
+            onClick={() => setSelectedRoomId(room.id)}
+            className="bg-[#955251] rounded-[40px] border border-white/10 shadow-xl p-8 hover:shadow-2xl transition-all group flex flex-col h-full cursor-pointer relative overflow-hidden"
+          >
+            <div className="flex justify-between items-start mb-8">
               <div>
-                <span className="text-3xl font-black text-slate-800 tracking-tighter">#{room.number}</span>
-                <p className="text-sm font-medium text-slate-400 mt-1 uppercase tracking-widest">{room.type}</p>
+                <span className="text-4xl font-black text-white tracking-tighter block leading-none">#{room.number}</span>
+                <p className="text-[10px] font-black text-white/40 mt-3 uppercase tracking-[2px]">{room.type}</p>
               </div>
-              <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${STATUS_COLORS[room.status]}`}>
+              <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 shadow-md shrink-0 ${
+                room.status === RoomStatus.AVAILABLE ? 'bg-emerald-600 text-white border-emerald-400' : 
+                room.status === RoomStatus.OCCUPIED ? 'bg-rose-600 text-white border-rose-400' :
+                room.status === RoomStatus.CLEANING ? 'bg-amber-500 text-white border-amber-300' :
+                room.status === RoomStatus.RESERVED ? 'bg-blue-600 text-white border-blue-400' :
+                'bg-slate-600 text-white border-slate-400'
+              }`}>
                 {STATUS_LABELS[room.status]}
               </div>
             </div>
 
-            {room.status === RoomStatus.OCCUPIED && (
-              <div className="mb-6 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-emerald-700">
-                  <ShoppingCart size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Extras</span>
+            <div className="flex-1 min-h-[64px] flex flex-col justify-center mb-8">
+              {room.status === RoomStatus.OCCUPIED ? (
+                <div className="p-5 bg-black/20 rounded-[24px] border border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-emerald-400">
+                    <div className="p-2 bg-emerald-500/10 rounded-lg">
+                      <ShoppingCart size={18} />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest leading-none">Extras</span>
+                  </div>
+                  <span className="text-2xl font-black text-emerald-400 whitespace-nowrap">R$ {room.extraCharges.toFixed(2)}</span>
                 </div>
-                <span className="text-lg font-black text-emerald-800">R$ {room.extraCharges.toFixed(2)}</span>
-              </div>
-            )}
+              ) : (
+                <div className="flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[24px] p-5 h-full opacity-30">
+                  <p className="text-[9px] font-black text-white uppercase tracking-[2px]">Sem consumos</p>
+                </div>
+              )}
+            </div>
 
-            <div className="space-y-3 mt-auto">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Mudar Status:</p>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="mt-auto" onClick={e => e.stopPropagation()}>
+              <p className="text-[10px] font-black text-white/20 uppercase tracking-[3px] mb-4 text-center">Status do Quarto</p>
+              <div className="grid grid-cols-2 gap-3">
                 <button 
                   onClick={() => updateStatus(room.id, RoomStatus.AVAILABLE)}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all border ${room.status === RoomStatus.AVAILABLE ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-100 hover:border-emerald-200 hover:text-emerald-600'}`}
+                  className={`flex items-center justify-center gap-2 py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                    room.status === RoomStatus.AVAILABLE 
+                      ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg' 
+                      : 'bg-black/20 text-white/40 border-transparent hover:border-emerald-500/50 hover:text-white'
+                  }`}
                 >
-                  <Check size={16} /> Disponível
+                  <Check size={14} className="shrink-0" /> <span className="truncate">Livre</span>
                 </button>
                 <button 
                   onClick={() => updateStatus(room.id, RoomStatus.OCCUPIED)}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all border ${room.status === RoomStatus.OCCUPIED ? 'bg-rose-500 text-white border-rose-500 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-100 hover:border-rose-200 hover:text-rose-600'}`}
+                  className={`flex items-center justify-center gap-2 py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                    room.status === RoomStatus.OCCUPIED 
+                      ? 'bg-rose-600 text-white border-rose-400 shadow-lg' 
+                      : 'bg-black/20 text-white/40 border-transparent hover:border-rose-500/50 hover:text-white'
+                  }`}
                 >
-                  <RefreshCw size={16} /> Ocupado
+                  <RefreshCw size={14} className="shrink-0" /> <span className="truncate">Ocupado</span>
+                </button>
+                <button 
+                  onClick={() => updateStatus(room.id, RoomStatus.RESERVED)}
+                  className={`flex items-center justify-center gap-2 py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                    room.status === RoomStatus.RESERVED 
+                      ? 'bg-blue-600 text-white border-blue-400 shadow-lg' 
+                      : 'bg-black/20 text-white/40 border-transparent hover:border-blue-500/50 hover:text-white'
+                  }`}
+                >
+                  <Calendar size={14} className="shrink-0" /> <span className="truncate">Reserv.</span>
                 </button>
                 <button 
                   onClick={() => updateStatus(room.id, RoomStatus.CLEANING)}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all border ${room.status === RoomStatus.CLEANING ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-100 hover:border-amber-200 hover:text-amber-600'}`}
+                  className={`flex items-center justify-center gap-2 py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                    room.status === RoomStatus.CLEANING 
+                      ? 'bg-amber-500 text-white border-amber-300 shadow-lg' 
+                      : 'bg-black/20 text-white/40 border-transparent hover:border-amber-500/50 hover:text-white'
+                  }`}
                 >
-                  <Eraser size={16} /> Limpeza
-                </button>
-                <button 
-                  onClick={() => updateStatus(room.id, RoomStatus.MAINTENANCE)}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all border ${room.status === RoomStatus.MAINTENANCE ? 'bg-slate-600 text-white border-slate-600 shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-100 hover:border-slate-300 hover:text-slate-800'}`}
-                >
-                  <Wrench size={16} /> Manut.
+                  <Eraser size={14} className="shrink-0" /> <span className="truncate">Limpeza</span>
                 </button>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Room Details Modal */}
+      {selectedRoom && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-[#955251] rounded-[48px] w-full max-w-2xl shadow-2xl p-0 overflow-hidden border border-white/10 animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-8 bg-black/20 flex justify-between items-center border-b border-white/5">
+              <div className="flex items-center gap-6">
+                <div className="p-4 bg-white/10 rounded-3xl">
+                  <span className="text-4xl font-black text-white tracking-tighter">#{selectedRoom.number}</span>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tight">{selectedRoom.type}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className={`w-2 h-2 rounded-full ${
+                      selectedRoom.status === RoomStatus.AVAILABLE ? 'bg-emerald-500' :
+                      selectedRoom.status === RoomStatus.OCCUPIED ? 'bg-rose-500' :
+                      'bg-slate-400'
+                    }`} />
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{STATUS_LABELS[selectedRoom.status]}</span>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedRoomId(null)}
+                className="p-3 hover:bg-white/10 rounded-2xl transition-colors text-white/40 hover:text-white"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              {selectedRoom.status === RoomStatus.OCCUPIED && currentGuest ? (
+                <div className="space-y-8">
+                  {/* Guest Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-5 bg-black/20 rounded-3xl border border-white/5 flex items-center gap-4">
+                      <div className="p-3 bg-blue-500/20 text-blue-400 rounded-2xl">
+                        <User size={20} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Hóspede</p>
+                        <p className="font-bold text-white leading-tight">{currentGuest.name}</p>
+                        <div className="flex flex-col gap-0.5 mt-1.5 opacity-50">
+                          <span className="text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                            <FileText size={10} className="text-blue-400" />
+                            {currentGuest.document}
+                          </span>
+                          <span className="text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                            <Phone size={10} className="text-emerald-400" />
+                            {currentGuest.phone}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-5 bg-black/20 rounded-3xl border border-white/5 flex items-center gap-4">
+                      <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-2xl">
+                        <Calendar size={20} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Check-in</p>
+                        <p className="font-bold text-white leading-tight">{new Date(currentGuest.checkInDate).toLocaleDateString('pt-BR')} às {currentGuest.checkInTime}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Billing Details */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-white/40 mb-2">
+                      <Receipt size={16} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Extrato de Estadia</span>
+                    </div>
+
+                    <div className="bg-black/20 rounded-[32px] overflow-hidden border border-white/5">
+                      <table className="w-full text-left">
+                        <thead className="bg-white/5 text-[9px] font-black text-white/30 uppercase tracking-[2px]">
+                          <tr>
+                            <th className="px-6 py-4">Item</th>
+                            <th className="px-6 py-4 text-right">Preço</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-sm font-medium">
+                          <tr className="border-b border-white/5">
+                            <td className="px-6 py-4 text-white">
+                              Diárias ({days} {days === 1 ? 'dia' : 'dias'})
+                            </td>
+                            <td className="px-6 py-4 text-right text-white">
+                              R$ {roomTotal.toFixed(2)}
+                            </td>
+                          </tr>
+                          {roomPurchases.map((purchase) => (
+                            <tr key={purchase.id} className="border-b border-white/5">
+                              <td className="px-6 py-4 text-white/60">
+                                {purchase.productName}
+                              </td>
+                              <td className="px-6 py-4 text-right text-white/60">
+                                R$ {purchase.price.toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      
+                      <div className="p-6 bg-white/5 flex justify-between items-center border-t-2 border-white/10">
+                        <span className="text-lg font-black text-white uppercase tracking-tighter">Total Geral</span>
+                        <span className="text-3xl font-black text-white">R$ {grandTotal.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="pt-4 flex gap-4">
+                    <button 
+                      onClick={() => {
+                        onCheckOut(selectedRoom.id);
+                        setSelectedRoomId(null);
+                      }}
+                      className="flex-1 bg-white text-black hover:bg-white/90 px-8 py-5 rounded-[24px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95"
+                    >
+                      <CheckCircle size={20} /> Checkout Completo
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
+                  <FileText size={64} strokeWidth={1} className="mb-6" />
+                  <p className="text-xl font-bold">Nenhum hóspede ativo</p>
+                  <p className="text-sm">Quarto está livre para novas reservas ou ocupação.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
