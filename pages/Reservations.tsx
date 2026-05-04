@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Reservation, Room, RoomStatus, PaymentStatus, PaymentMethod } from '../types';
-import { CalendarCheck, Plus, Clock, CheckCircle, XCircle, CreditCard, DollarSign, Edit2, Trash2 } from 'lucide-react';
+import { CalendarCheck, Plus, Clock, CheckCircle, XCircle, CreditCard, DollarSign, Edit2, Trash2, Search } from 'lucide-react';
 
 interface ReservationsProps {
   reservations: Reservation[];
@@ -13,11 +13,18 @@ interface ReservationsProps {
 }
 
 const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservation, onUpdateReservation, onDeleteReservation, rooms, onConfirm }) => {
+  const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [resToDelete, setResToDelete] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [newRes, setNewRes] = useState({
+
+  const filteredReservations = reservations.filter(res => 
+    res.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    res.document.includes(searchTerm)
+  );
+
+  const [newRes, setNewRes] = useState<Omit<Reservation, 'id'>>({
     guestName: '',
     document: '',
     phone: '',
@@ -25,7 +32,7 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
     date: '',
     time: '',
     roomId: '',
-    status: 'Pending' as const,
+    status: 'Pending',
     notes: '',
     paymentStatus: PaymentStatus.PENDING,
     paymentMethod: PaymentMethod.PIX,
@@ -66,7 +73,7 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
       r.roomId === newRes.roomId && 
       r.date === newRes.date && 
       r.id !== editingId &&
-      r.status !== 'Canceled'
+      r.status !== 'Cancelled'
     );
 
     if (conflict) {
@@ -80,7 +87,7 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
     } else {
       const reservation: Reservation = {
         ...newRes,
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).substring(2, 11),
       };
       onAddReservation(reservation);
     }
@@ -130,6 +137,18 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
         </button>
       </div>
 
+      {/* Search bar */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
+        <input 
+          type="text" 
+          placeholder="Buscar reserva por nome ou CPF..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm text-white placeholder:text-white/20"
+        />
+      </div>
+
       <div className="bg-[#955251] rounded-[32px] border border-white/10 shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[800px]">
@@ -144,7 +163,7 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {reservations.length > 0 ? reservations.map((res) => (
+              {filteredReservations.length > 0 ? filteredReservations.map((res) => (
                 <tr key={res.id} className="hover:bg-white/5 transition-colors group">
                   <td className="px-8 py-6">
                     <span className="font-black text-white text-lg tracking-tight">{res.guestName}</span>

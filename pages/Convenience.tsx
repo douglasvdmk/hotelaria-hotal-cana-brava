@@ -23,14 +23,18 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
     e.preventDefault();
     if (!newProduct.name || !newProduct.price || !newProduct.stock) return;
     const product: Product = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).substring(2, 11),
       name: newProduct.name,
-      price: parseFloat(newProduct.price),
-      stock: parseInt(newProduct.stock)
+      price: parseFloat(newProduct.price) || 0,
+      stock: parseInt(newProduct.stock) || 0
     };
     setProducts([...products, product]);
     setNewProduct({ name: '', price: '', stock: '' });
     setIsAddProductModalOpen(false);
+  };
+
+  const handleDeleteProduct = (id: string) => {
+    setProducts(products.filter(p => p.id !== id));
   };
 
   const handlePurchase = (e: React.FormEvent) => {
@@ -124,7 +128,16 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
                        </span>
                     </div>
                   </div>
-                  <Tag size={16} className="text-white/20" />
+                  <div className="flex items-center gap-3">
+                    <Tag size={16} className="text-white/20" />
+                    <button 
+                      onClick={() => handleDeleteProduct(p.id)}
+                      className="p-2 text-white/20 hover:text-rose-400 transition-colors"
+                      title="Excluir produto"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

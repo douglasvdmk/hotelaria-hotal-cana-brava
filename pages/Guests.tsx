@@ -105,7 +105,7 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
       onUpdateGuest({ ...formData, id: editingId } as Guest);
     } else {
       const newGuest: Guest = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).substring(2, 11),
         ...formData
       } as Guest;
       onAddGuest(newGuest);

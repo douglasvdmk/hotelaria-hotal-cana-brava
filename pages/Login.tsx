@@ -26,7 +26,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, hotelName, primaryColor }) => {
     <div className="min-h-screen bg-black flex items-center justify-center p-6 text-white">
       <div className="bg-[#955251] p-8 md:p-12 rounded-[40px] shadow-2xl w-full max-w-md border border-[#a66362] animate-in zoom-in duration-300">
         <div className="flex flex-col items-center mb-10">
-          <div className="p-4 rounded-3xl text-white shadow-xl mb-6" style={{ backgroundColor: primaryColor, shadowColor: `${primaryColor}40` }}>
+          <div className="p-4 rounded-3xl text-white shadow-xl mb-6" style={{ backgroundColor: primaryColor }}>
             <Hotel size={40} />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-2 text-center leading-tight">{hotelName}</h1>

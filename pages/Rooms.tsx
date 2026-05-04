@@ -10,9 +10,10 @@ interface RoomsProps {
   guests: Guest[];
   purchases: Purchase[];
   onCheckOut: (roomId: string) => void;
+  onMarkCleaned: (roomId: string) => void;
 }
 
-const Rooms: React.FC<RoomsProps> = ({ rooms, setRooms, guests, purchases, onCheckOut }) => {
+const Rooms: React.FC<RoomsProps> = ({ rooms, setRooms, guests, purchases, onCheckOut, onMarkCleaned }) => {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 
   const updateStatus = (id: string, newStatus: RoomStatus) => {
@@ -25,10 +26,13 @@ const Rooms: React.FC<RoomsProps> = ({ rooms, setRooms, guests, purchases, onChe
 
   const calculateDays = (checkIn: string) => {
     if (!checkIn) return 1;
-    const start = new Date(checkIn);
+    const start = new Date(checkIn + 'T00:00:00');
     const end = new Date();
-    const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    return diff <= 0 ? 1 : diff;
+    end.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    const diffTime = end.getTime() - start.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 0 ? 1 : diffDays;
   };
 
   const days = currentGuest ? calculateDays(currentGuest.checkInDate) : 0;
@@ -133,6 +137,14 @@ const Rooms: React.FC<RoomsProps> = ({ rooms, setRooms, guests, purchases, onChe
                 >
                   <Eraser size={14} className="shrink-0" /> <span className="truncate">Limpeza</span>
                 </button>
+                {room.status === RoomStatus.CLEANING && (
+                  <button 
+                    onClick={() => onMarkCleaned(room.id)}
+                    className="col-span-2 flex items-center justify-center gap-2 py-3 px-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/30 hover:bg-emerald-500 hover:text-white"
+                  >
+                    Marcar como Limpo
+                  </button>
+                )}
                 <button 
                   onClick={() => updateStatus(room.id, RoomStatus.MAINTENANCE)}
                   className={`flex items-center justify-center gap-2 py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
@@ -209,7 +221,7 @@ const Rooms: React.FC<RoomsProps> = ({ rooms, setRooms, guests, purchases, onChe
                       </div>
                       <div>
                         <p className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Check-in</p>
-                        <p className="font-bold text-white leading-tight">{new Date(currentGuest.checkInDate).toLocaleDateString('pt-BR')} às {currentGuest.checkInTime}</p>
+                        <p className="font-bold text-white leading-tight">{currentGuest.checkInDate ? new Date(currentGuest.checkInDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A'} às {currentGuest.checkInTime}</p>
                       </div>
                     </div>
                   </div>

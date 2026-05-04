@@ -73,7 +73,7 @@ const Dashboard: React.FC<DashboardProps> = ({ rooms, guests, onNavigate }) => {
         {stats.map((stat, i) => (
           <div key={i} className="bg-[#955251] p-6 rounded-[32px] border border-white/10 shadow-xl flex flex-col items-center justify-center text-center gap-3 transition-all hover:scale-[1.05] hover:bg-[#a66362]">
             <div className={`${stat.bg} ${stat.color} p-4 rounded-2xl mb-1 shadow-inner`}>
-              {React.cloneElement(stat.icon as React.ReactElement, { size: 28 })}
+              {React.cloneElement(stat.icon as React.ReactElement<any>, { size: 28 })}
             </div>
             <div className="flex flex-col items-center">
               <p className="text-[10px] font-black text-white/50 uppercase tracking-[2px] mb-1">{stat.label}</p>

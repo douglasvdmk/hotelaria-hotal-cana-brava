@@ -26,7 +26,7 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
       setRooms(rooms.map(r => r.id === editingRoomId ? { ...r, number: newRoom.number, type: newRoom.type, price: newRoom.price } : r));
     } else {
       const room: Room = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).substring(2, 11),
         number: newRoom.number,
         type: newRoom.type,
         status: RoomStatus.AVAILABLE,

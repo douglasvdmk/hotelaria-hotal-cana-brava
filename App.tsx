@@ -67,6 +67,7 @@ const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [prefilledGuest, setPrefilledGuest] = useState<Partial<Guest> | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Persistence - Load from LocalStorage
   useEffect(() => {
@@ -93,11 +94,13 @@ const App: React.FC = () => {
 
     const savedPurchases = localStorage.getItem('hotel_purchases');
     if (savedPurchases) setPurchases(JSON.parse(savedPurchases));
+    
+    setIsLoaded(true);
   }, []);
 
   // Persistence - Save to LocalStorage
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && isLoaded) {
       localStorage.setItem('hotel_config', JSON.stringify(hotelConfig));
       localStorage.setItem('hotel_rooms', JSON.stringify(rooms));
       localStorage.setItem('hotel_guests', JSON.stringify(guests));
@@ -106,7 +109,7 @@ const App: React.FC = () => {
       localStorage.setItem('hotel_products', JSON.stringify(products));
       localStorage.setItem('hotel_purchases', JSON.stringify(purchases));
     }
-  }, [hotelConfig, rooms, guests, reservations, notes, products, purchases, isAuthenticated]);
+  }, [hotelConfig, rooms, guests, reservations, notes, products, purchases, isAuthenticated, isLoaded]);
 
   const handleLogin = (success: boolean) => {
     if (success) {
@@ -123,7 +126,7 @@ const App: React.FC = () => {
   const addPurchase = (purchase: Omit<Purchase, 'id' | 'timestamp'>) => {
     const newPurchase: Purchase = {
       ...purchase,
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).substring(2, 11),
       timestamp: Date.now(),
     };
     setPurchases(prev => [...prev, newPurchase]);
@@ -231,6 +234,14 @@ const App: React.FC = () => {
     } : r));
   };
 
+  const handleMarkRoomCleaned = (roomId: string) => {
+    setRooms(prev => prev.map(r => 
+      r.id === roomId && r.status === RoomStatus.CLEANING 
+        ? { ...r, status: RoomStatus.AVAILABLE } 
+        : r
+    ));
+  };
+
   const handleConfirmReservation = (res: Reservation) => {
     setPrefilledGuest({
       name: res.guestName,
@@ -281,6 +292,7 @@ const App: React.FC = () => {
             guests={guests} 
             purchases={purchases}
             onCheckOut={handleCheckOut}
+            onMarkCleaned={handleMarkRoomCleaned}
           />
         );
       case 'reservations':
@@ -319,7 +331,7 @@ const App: React.FC = () => {
           />
         );
       default:
-        return <Dashboard rooms={rooms} guests={guests} setRooms={setRooms} setGuests={setGuests} />;
+        return <Dashboard rooms={rooms} guests={guests} setRooms={setRooms} setGuests={setGuests} onNavigate={setCurrentPage} />;
     }
   };
 
