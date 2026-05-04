@@ -116,11 +116,11 @@ const App: React.FC = () => {
         throw new Error(errorMsg);
       }
 
-      setRooms(roomsData && roomsData.length > 0 ? (roomsData as Room[]) : INITIAL_ROOMS);
+      setRooms(roomsData && roomsData.length > 0 ? (roomsData as Room[]) : []);
       setGuests(guestsData && guestsData.length > 0 ? (guestsData as Guest[]) : []);
       setReservations(resData && resData.length > 0 ? (resData as Reservation[]) : []);
       setNotes(notesData && notesData.length > 0 ? (notesData as ReceptionNote[]) : []);
-      setProducts(productsData && productsData.length > 0 ? (productsData as Product[]) : INITIAL_PRODUCTS);
+      setProducts(productsData && productsData.length > 0 ? (productsData as Product[]) : []);
       setPurchases(purchasesData && purchasesData.length > 0 ? (purchasesData as Purchase[]) : []);
       
       if (settingsData) {
