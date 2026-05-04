@@ -70,18 +70,21 @@ const App: React.FC = () => {
   const [prefilledGuest, setPrefilledGuest] = useState<Partial<Guest> | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
 
   // Persistence - Fetch from Supabase
   const fetchData = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const [
-        { data: roomsData },
-        { data: guestsData },
-        { data: resData },
-        { data: notesData },
-        { data: productsData },
-        { data: purchasesData },
-        { data: settingsData }
+        { data: roomsData, error: roomsError },
+        { data: guestsData, error: guestsError },
+        { data: resData, error: resError },
+        { data: notesData, error: notesError },
+        { data: productsData, error: productsError },
+        { data: purchasesData, error: purchasesError },
+        { data: settingsData, error: settingsError }
       ] = await Promise.all([
         supabase.from('rooms').select('*'),
         supabase.from('guests').select('*'),
@@ -92,46 +95,42 @@ const App: React.FC = () => {
         supabase.from('settings').select('*').eq('id', 'hotel_config').single()
       ]);
 
-      // Bootstrap logic: if DB is completely empty for key tables, insert initial data
-      if (!roomsData || roomsData.length === 0) {
-        await supabase.from('rooms').insert(INITIAL_ROOMS);
-        setRooms(INITIAL_ROOMS);
-      } else {
-        setRooms(roomsData as Room[]);
+      const tableErrors = [
+        { name: 'rooms', error: roomsError },
+        { name: 'guests', error: guestsError },
+        { name: 'reservations', error: resError },
+        { name: 'notes', error: notesError },
+        { name: 'products', error: productsError },
+        { name: 'purchases', error: purchasesError }
+      ].filter(t => t.error);
+
+      if (tableErrors.length > 0) {
+        const isStripeKey = (supabase.auth as any)._key?.startsWith('sb_publishable_');
+        let errorMsg = `Erro nas tabelas: ${tableErrors.map(t => t.name).join(', ')}.`;
+        
+        if (isStripeKey || (import.meta.env.VITE_SUPABASE_ANON_KEY?.startsWith('sb_publishable_'))) {
+          errorMsg += " A chave 'VITE_SUPABASE_ANON_KEY' parece ser uma chave do Stripe (começa com sb_publishable_). Use a chave 'anon' public do painel do Supabase (começa com eyJ...).";
+        } else {
+          errorMsg += " Certifique-se de que elas existem e as políticas de RLS foram aplicadas.";
+        }
+        throw new Error(errorMsg);
       }
 
-      if (!guestsData || guestsData.length === 0) {
-        // Only bootstrap if it's the very first load and no guests ever
-        // We'll just show them for now, but not necessarily insert initial guest automatically to avoid pollution
-        setGuests(guestsData && guestsData.length === 0 ? [] : (guestsData as Guest[] || INITIAL_GUESTS));
-      } else {
-        setGuests(guestsData as Guest[]);
-      }
-
-      if (resData) setReservations(resData as Reservation[]);
-      if (notesData) setNotes(notesData as ReceptionNote[]);
+      setRooms(roomsData && roomsData.length > 0 ? (roomsData as Room[]) : INITIAL_ROOMS);
+      setGuests(guestsData && guestsData.length > 0 ? (guestsData as Guest[]) : []);
+      setReservations(resData && resData.length > 0 ? (resData as Reservation[]) : []);
+      setNotes(notesData && notesData.length > 0 ? (notesData as ReceptionNote[]) : []);
+      setProducts(productsData && productsData.length > 0 ? (productsData as Product[]) : INITIAL_PRODUCTS);
+      setPurchases(purchasesData && purchasesData.length > 0 ? (purchasesData as Purchase[]) : []);
       
-      if (!productsData || productsData.length === 0) {
-        await supabase.from('products').insert(INITIAL_PRODUCTS);
-        setProducts(INITIAL_PRODUCTS);
-      } else {
-        setProducts(productsData as Product[]);
-      }
-
-      if (purchasesData) setPurchases(purchasesData as Purchase[]);
       if (settingsData) {
         setHotelConfig({ name: settingsData.name, primaryColor: settingsData.primaryColor });
-      } else {
-        // If no settings exist, the useEffect will create them soon
-        console.log('No settings found in Supabase, using defaults.');
       }
 
-    } catch (error) {
+      setErrorStatus(null);
+    } catch (error: any) {
       console.error('Error fetching from Supabase:', error);
-      // Fallback to avoid empty screen
-      setRooms(INITIAL_ROOMS);
-      setProducts(INITIAL_PRODUCTS);
-      setGuests(INITIAL_GUESTS);
+      setErrorStatus(error.message || 'Erro de conexão com o banco de dados.');
     } finally {
       setIsLoaded(true);
     }
@@ -598,6 +597,11 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-black">
+      {errorStatus && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[1000] bg-rose-600 text-white px-6 py-3 rounded-2xl shadow-2xl font-bold animate-in zoom-in-95">
+          {errorStatus}
+        </div>
+      )}
       {isSyncing && (
         <div className="fixed top-4 right-4 z-[999] bg-blue-600 text-white rounded-full p-2 shadow-lg flex items-center gap-2 pr-4 animate-in fade-in slide-in-from-right-4">
           <Loader2 className="animate-spin" size={16} />
