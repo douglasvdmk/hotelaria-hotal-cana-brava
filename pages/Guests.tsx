@@ -19,6 +19,8 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
   const [editingId, setEditingId] = useState<string | null>(null);
   const [guestToDelete, setGuestToDelete] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<Guest[]>([]);
+  const [duplicateGuest, setDuplicateGuest] = useState<Guest | null>(null);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -56,6 +58,47 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
       notes: ''
     });
     setEditingId(null);
+    setSuggestions([]);
+    setDuplicateGuest(null);
+  };
+
+  const selectSuggestedGuest = (guest: Guest) => {
+    setFormData(prev => ({
+      ...prev,
+      name: guest.name,
+      document: guest.document,
+      phone: guest.phone,
+      email: guest.email,
+      notes: guest.notes || prev.notes,
+      // We don't necessarily update check-in/out or room as it's a new stay
+    }));
+    setSuggestions([]);
+    setDuplicateGuest(null);
+  };
+
+  const handleDocumentChange = (value: string) => {
+    setFormData({ ...formData, document: value });
+    
+    if (value.length >= 3) {
+      const matches = guests.filter(g => 
+        g.document.replace(/\D/g, '').startsWith(value.replace(/\D/g, '')) ||
+        g.document.includes(value)
+      );
+      
+      // Filter out duplicate names if any (keep most recent)
+      const uniqueMatches = Array.from(new Map(matches.map(item => [item.document, item])).values());
+      setSuggestions(uniqueMatches.slice(0, 5));
+
+      const exactMatch = guests.find(g => g.document.replace(/\D/g, '') === value.replace(/\D/g, ''));
+      if (exactMatch && !editingId) {
+        setDuplicateGuest(exactMatch);
+      } else {
+        setDuplicateGuest(null);
+      }
+    } else {
+      setSuggestions([]);
+      setDuplicateGuest(null);
+    }
   };
 
   React.useEffect(() => {
@@ -94,6 +137,15 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
     if (formData.checkOutDate && formData.checkInDate && formData.checkInDate > formData.checkOutDate) {
       setValidationError('A data de check-out não pode ser anterior à data de check-in.');
       return;
+    }
+
+    // Check for duplicate CPF only on new records
+    if (!editingId && formData.document) {
+      const existingGuest = guests.find(g => g.document.replace(/\D/g, '') === formData.document.replace(/\D/g, ''));
+      if (existingGuest) {
+        setValidationError(`Já existe um hóspede cadastrado com este Documento: ${existingGuest.name}. Por favor, use a busca inteligente ou atualize os dados existentes.`);
+        return;
+      }
     }
     
     if (editingId) {
@@ -264,9 +316,61 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
                   <label className="block text-sm font-bold text-white/60 mb-2">Nome Completo</label>
                   <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
                 </div>
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-bold text-white/60 mb-2">CPF / RG</label>
-                  <input type="text" value={formData.document} onChange={e => setFormData({...formData, document: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                  <input 
+                    type="text" 
+                    value={formData.document} 
+                    onChange={e => handleDocumentChange(e.target.value)} 
+                    className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" 
+                    placeholder="Comece a digitar o CPF..."
+                  />
+                  
+                  {suggestions.length > 0 && (
+                    <div className="absolute z-[60] left-0 right-0 mt-1 bg-[#4A2C2B] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+                       <div className="p-2 border-b border-white/5 bg-black/20">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Hóspedes Encontrados</p>
+                       </div>
+                       <ul className="max-h-48 overflow-y-auto">
+                          {suggestions.map((g) => (
+                            <li key={g.id}>
+                               <button
+                                 type="button"
+                                 onClick={() => selectSuggestedGuest(g)}
+                                 className="w-full text-left p-3 hover:bg-white/5 transition-colors border-b border-white/5 flex flex-col gap-0.5"
+                               >
+                                  <span className="font-bold text-white text-sm">{g.name}</span>
+                                  <div className="flex items-center gap-3">
+                                     <span className="text-[10px] font-medium text-white/40">CPF: {g.document}</span>
+                                     {g.phone && <span className="text-[10px] font-medium text-white/40">Tel: {g.phone}</span>}
+                                  </div>
+                               </button>
+                            </li>
+                          ))}
+                       </ul>
+                    </div>
+                  )}
+
+                  {duplicateGuest && (
+                    <div className="mt-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl animate-in zoom-in slide-in-from-top-2">
+                       <div className="flex items-start gap-4">
+                          <div className="p-2 bg-emerald-500/20 rounded-xl text-emerald-400">
+                             <UserPlus size={18} />
+                          </div>
+                          <div className="flex-1">
+                             <p className="text-sm font-bold text-white leading-tight">Este CPF já possui cadastro ({duplicateGuest.name}).</p>
+                             <p className="text-xs text-white/40 mt-1">Deseja carregar os dados salvos para este hóspede?</p>
+                             <button 
+                               type="button"
+                               onClick={() => selectSuggestedGuest(duplicateGuest)}
+                               className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all"
+                             >
+                                Carreagar Dados
+                             </button>
+                          </div>
+                       </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-white/60 mb-2">Telefone</label>
