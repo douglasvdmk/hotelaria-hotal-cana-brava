@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Room, Guest, RoomStatus, RoomType } from '../types';
+import { Room, Guest, RoomStatus } from '../types';
 import { STATUS_COLORS, STATUS_DOTS, STATUS_LABELS } from '../constants';
 import { Users, Bed, CheckSquare, XSquare, Activity, ArrowUpDown, LayoutGrid } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -13,38 +13,8 @@ interface DashboardProps {
   onNavigate: (page: string) => void;
 }
 
-const ROOM_PRICES = {
-  [RoomType.SIMPLE]: 150,
-  [RoomType.DOUBLE]: 250,
-  [RoomType.SUITE]: 450
-};
-
 const Dashboard: React.FC<DashboardProps> = ({ rooms, guests, onNavigate }) => {
   const [sortOrder, setSortOrder] = useState<'number' | 'available' | 'occupied' | 'reserved'>('number');
-
-  const calculateDays = (checkIn: string) => {
-    if (!checkIn) return 1;
-    const start = new Date(checkIn);
-    const end = new Date();
-    const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    return diff <= 0 ? 1 : diff;
-  };
-
-  const totalRevenue = guests.reduce((acc, guest) => {
-    if (guest.paymentStatus === 'Pago') return acc + (guest.amountPaid || 0);
-    return acc;
-  }, 0);
-
-  const estimatedActiveRevenue = rooms.reduce((acc, room) => {
-    if (room.status === RoomStatus.OCCUPIED && room.currentGuestId) {
-      const guest = guests.find(g => g.id === room.currentGuestId);
-      if (guest) {
-        const days = calculateDays(guest.checkInDate);
-        return acc + (ROOM_PRICES[room.type] * days) + (room.extraCharges || 0);
-      }
-    }
-    return acc;
-  }, 0);
 
   const getSortedRooms = () => {
     const sorted = [...rooms];
@@ -99,7 +69,7 @@ const Dashboard: React.FC<DashboardProps> = ({ rooms, guests, onNavigate }) => {
       </header>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {stats.map((stat, i) => (
           <div key={i} className="bg-[#955251] p-6 rounded-[32px] border border-white/10 shadow-xl flex flex-col items-center justify-center text-center gap-3 transition-all hover:scale-[1.05] hover:bg-[#a66362]">
             <div className={`${stat.bg} ${stat.color} p-4 rounded-2xl mb-1 shadow-inner`}>
@@ -111,21 +81,6 @@ const Dashboard: React.FC<DashboardProps> = ({ rooms, guests, onNavigate }) => {
             </div>
           </div>
         ))}
-        {/* Additional Custom Stats */}
-        <div className="bg-emerald-600 p-6 rounded-[32px] border border-white/10 shadow-xl flex flex-col items-center justify-center text-center gap-3 transition-all hover:scale-[1.05] lg:col-span-2 xl:col-span-1">
-           <div className="p-4 rounded-2xl bg-white/20 text-white mb-1 shadow-inner font-black text-xl">R$</div>
-           <div className="flex flex-col items-center">
-              <p className="text-[10px] font-black text-white/70 uppercase tracking-[2px] mb-1">Receita Total</p>
-              <p className="text-2xl font-black text-white leading-none">R$ {totalRevenue.toFixed(0)}</p>
-            </div>
-        </div>
-        <div className="bg-blue-600 p-6 rounded-[32px] border border-white/10 shadow-xl flex flex-col items-center justify-center text-center gap-3 transition-all hover:scale-[1.05] lg:col-span-2 xl:col-span-1">
-           <div className="p-4 rounded-2xl bg-white/20 text-white mb-1 shadow-inner font-black text-xl">R$</div>
-           <div className="flex flex-col items-center">
-              <p className="text-[10px] font-black text-white/70 uppercase tracking-[2px] mb-1">Previsto Ativo</p>
-              <p className="text-2xl font-black text-white leading-none">R$ {estimatedActiveRevenue.toFixed(0)}</p>
-            </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

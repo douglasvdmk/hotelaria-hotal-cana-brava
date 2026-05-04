@@ -15,21 +15,36 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHotelConfig, products, setProducts }) => {
   const [activeTab, setActiveTab] = useState<'hotel' | 'rooms' | 'products'>('hotel');
   const [isAddRoomOpen, setIsAddRoomOpen] = useState(false);
-  const [newRoom, setNewRoom] = useState({ number: '', type: RoomType.SIMPLE });
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+  const [newRoom, setNewRoom] = useState({ number: '', type: RoomType.SIMPLE, price: 0 });
 
   const handleAddRoom = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRoom.number) return;
-    const room: Room = {
-      id: Math.random().toString(36).substr(2, 9),
-      number: newRoom.number,
-      type: newRoom.type,
-      status: RoomStatus.AVAILABLE,
-      extraCharges: 0
-    };
-    setRooms([...rooms, room]);
-    setNewRoom({ number: '', type: RoomType.SIMPLE });
+
+    if (editingRoomId) {
+      setRooms(rooms.map(r => r.id === editingRoomId ? { ...r, number: newRoom.number, type: newRoom.type, price: newRoom.price } : r));
+    } else {
+      const room: Room = {
+        id: Math.random().toString(36).substr(2, 9),
+        number: newRoom.number,
+        type: newRoom.type,
+        status: RoomStatus.AVAILABLE,
+        extraCharges: 0,
+        price: newRoom.price
+      };
+      setRooms([...rooms, room]);
+    }
+    
+    setNewRoom({ number: '', type: RoomType.SIMPLE, price: 0 });
     setIsAddRoomOpen(false);
+    setEditingRoomId(null);
+  };
+
+  const handleEditRoom = (room: Room) => {
+    setNewRoom({ number: room.number, type: room.type, price: room.price });
+    setEditingRoomId(room.id);
+    setIsAddRoomOpen(true);
   };
 
   return (
@@ -119,11 +134,17 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
                         <div className="w-12 h-12 bg-black/30 rounded-xl flex items-center justify-center font-black text-white border border-white/5">
                           {room.number}
                         </div>
-                        <div>
+                        <div className="flex flex-col">
                           <p className="text-xs font-black text-white/40 uppercase tracking-wider">{room.type}</p>
+                          <p className="text-[10px] font-bold text-emerald-400 mt-0.5">
+                            {room.price > 0 ? `R$ ${room.price.toFixed(2)}` : 'Preço não definido'}
+                          </p>
                         </div>
                       </div>
-                      <button onClick={() => setRooms(rooms.filter(r => r.id !== room.id))} className="p-2 text-white/30 hover:text-rose-400"><Trash2 size={18} /></button>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEditRoom(room)} className="p-2 text-white/30 hover:text-blue-400"><Edit2 size={18} /></button>
+                        <button onClick={() => setRooms(rooms.filter(r => r.id !== room.id))} className="p-2 text-white/30 hover:text-rose-400"><Trash2 size={18} /></button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -159,21 +180,41 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
       {isAddRoomOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="bg-[#955251] rounded-[40px] w-full max-w-md shadow-2xl p-10 border border-white/10">
-            <h3 className="text-2xl font-black text-white mb-8 tracking-tighter uppercase">Adicionar Unidade</h3>
+            <h3 className="text-2xl font-black text-white mb-8 tracking-tighter uppercase">
+              {editingRoomId ? 'Editar Unidade' : 'Adicionar Unidade'}
+            </h3>
             <form onSubmit={handleAddRoom} className="space-y-6">
               <div>
                 <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Número</label>
                 <input required type="text" value={newRoom.number} onChange={e => setNewRoom({...newRoom, number: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white" />
               </div>
-              <div>
-                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Tipo</label>
-                <select required value={newRoom.type} onChange={e => setNewRoom({...newRoom, type: e.target.value as RoomType})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white">
-                  {Object.values(RoomType).map(type => <option key={type} value={type} className="bg-slate-800">{type}</option>)}
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Tipo</label>
+                  <select required value={newRoom.type} onChange={e => setNewRoom({...newRoom, type: e.target.value as RoomType})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white">
+                    {Object.values(RoomType).map(type => <option key={type} value={type} className="bg-slate-800">{type}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Preço Diária</label>
+                  <input required type="number" step="0.01" min="0" value={newRoom.price} onChange={e => setNewRoom({...newRoom, price: parseFloat(e.target.value) || 0})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white" />
+                </div>
               </div>
               <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setIsAddRoomOpen(false)} className="flex-1 px-6 py-4 font-bold text-white/50">Voltar</button>
-                <button type="submit" className="flex-1 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg" style={{ backgroundColor: hotelConfig.primaryColor }}>Salvar</button>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsAddRoomOpen(false);
+                    setEditingRoomId(null);
+                    setNewRoom({ number: '', type: RoomType.SIMPLE, price: 0 });
+                  }} 
+                  className="flex-1 px-6 py-4 font-bold text-white/50"
+                >
+                  Voltar
+                </button>
+                <button type="submit" className="flex-1 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg" style={{ backgroundColor: hotelConfig.primaryColor }}>
+                  {editingRoomId ? 'Salvar' : 'Adicionar'}
+                </button>
               </div>
             </form>
           </div>

@@ -34,6 +34,7 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
     paymentStatus: PaymentStatus.PENDING,
     paymentMethod: PaymentMethod.PIX,
     amountPaid: 0,
+    dailyRate: 0,
     notes: ''
   });
 
@@ -51,6 +52,7 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
       paymentStatus: PaymentStatus.PENDING,
       paymentMethod: PaymentMethod.PIX,
       amountPaid: 0,
+      dailyRate: 0,
       notes: ''
     });
     setEditingId(null);
@@ -71,6 +73,7 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
         paymentStatus: prefilledData.paymentStatus || PaymentStatus.PENDING,
         paymentMethod: prefilledData.paymentMethod || PaymentMethod.PIX,
         amountPaid: prefilledData.amountPaid || 0,
+        dailyRate: prefilledData.dailyRate || 0,
         notes: prefilledData.notes || '',
       }));
       setIsModalOpen(true);
@@ -127,6 +130,7 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
       paymentStatus: guest.paymentStatus,
       paymentMethod: guest.paymentMethod,
       amountPaid: guest.amountPaid,
+      dailyRate: guest.dailyRate || 0,
       notes: guest.notes
     });
     setValidationError(null);
@@ -279,30 +283,41 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-white/60 mb-2">Número do Quarto</label>
-                  <select value={formData.roomId} onChange={e => setFormData({...formData, roomId: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                  <select 
+                    value={formData.roomId} 
+                    onChange={e => {
+                      const roomId = e.target.value;
+                      const room = rooms.find(r => r.id === roomId);
+                      setFormData({...formData, roomId, dailyRate: room ? room.price : 0});
+                    }} 
+                    className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  >
                     <option value="" className="bg-slate-800">Selecione...</option>
                     {rooms.filter(r => r.status === RoomStatus.AVAILABLE || r.id === formData.roomId).map(r => (
-                      <option key={r.id} value={r.id} className="bg-slate-800">Quarto {r.number} ({r.type})</option>
+                      <option key={r.id} value={r.id} className="bg-slate-800">
+                        {r.number} ({r.type}) - {r.price > 0 ? `R$ ${r.price.toFixed(2)}` : 'S/ Preço'}
+                      </option>
                     ))}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-bold text-white/60 mb-2">Check-in Data</label>
                     <input type="date" value={formData.checkInDate} onChange={e => setFormData({...formData, checkInDate: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-white/60 mb-2">Hora</label>
+                    <label className="block text-xs font-black text-white/30 uppercase tracking-widest ml-1 mb-1">Hora do Check-in</label>
                     <input type="time" value={formData.checkInTime} onChange={e => setFormData({...formData, checkInTime: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+
+                <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-bold text-white/60 mb-2">Check-out Data</label>
                     <input type="date" value={formData.checkOutDate} onChange={e => setFormData({...formData, checkOutDate: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-white/60 mb-2">Hora</label>
+                    <label className="block text-xs font-black text-white/30 uppercase tracking-widest ml-1 mb-1">Hora do Check-out</label>
                     <input type="time" value={formData.checkOutTime} onChange={e => setFormData({...formData, checkOutTime: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
                   </div>
                 </div>
@@ -318,9 +333,15 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
                     {Object.values(PaymentMethod).map(method => <option key={method} value={method} className="bg-slate-800">{method}</option>)}
                   </select>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-bold text-white/60 mb-2">Valor Pago</label>
-                  <input type="number" step="0.01" value={formData.amountPaid} onChange={e => setFormData({...formData, amountPaid: parseFloat(e.target.value)})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-white/60 mb-2">Valor da Diária</label>
+                    <input type="number" step="0.01" value={formData.dailyRate} onChange={e => setFormData({...formData, dailyRate: parseFloat(e.target.value) || 0})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-white/60 mb-2">Valor Pago</label>
+                    <input type="number" step="0.01" value={formData.amountPaid} onChange={e => setFormData({...formData, amountPaid: parseFloat(e.target.value) || 0})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                  </div>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-bold text-white/60 mb-2">Observações</label>

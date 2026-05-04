@@ -13,12 +13,12 @@ import Convenience from './pages/Convenience';
 import Settings from './pages/Settings';
 
 const INITIAL_ROOMS: Room[] = [
-  { id: '1', number: '101', type: RoomType.SIMPLE, status: RoomStatus.AVAILABLE, extraCharges: 0 },
-  { id: '2', number: '102', type: RoomType.SIMPLE, status: RoomStatus.OCCUPIED, currentGuestId: 'g1', extraCharges: 0 },
-  { id: '3', number: '201', type: RoomType.DOUBLE, status: RoomStatus.CLEANING, extraCharges: 0 },
-  { id: '4', number: '202', type: RoomType.DOUBLE, status: RoomStatus.AVAILABLE, extraCharges: 0 },
-  { id: '5', number: '301', type: RoomType.SUITE, status: RoomStatus.MAINTENANCE, extraCharges: 0 },
-  { id: '6', number: '302', type: RoomType.SUITE, status: RoomStatus.AVAILABLE, extraCharges: 0 },
+  { id: '1', number: '101', type: RoomType.SIMPLE, status: RoomStatus.AVAILABLE, extraCharges: 0, price: 0 },
+  { id: '2', number: '102', type: RoomType.SIMPLE, status: RoomStatus.OCCUPIED, currentGuestId: 'g1', extraCharges: 0, price: 0 },
+  { id: '3', number: '201', type: RoomType.DOUBLE, status: RoomStatus.CLEANING, extraCharges: 0, price: 0 },
+  { id: '4', number: '202', type: RoomType.DOUBLE, status: RoomStatus.AVAILABLE, extraCharges: 0, price: 0 },
+  { id: '5', number: '301', type: RoomType.SUITE, status: RoomStatus.MAINTENANCE, extraCharges: 0, price: 0 },
+  { id: '6', number: '302', type: RoomType.SUITE, status: RoomStatus.AVAILABLE, extraCharges: 0, price: 0 },
 ];
 
 const INITIAL_PRODUCTS: Product[] = [
@@ -43,7 +43,8 @@ const INITIAL_GUESTS: Guest[] = [
     paymentStatus: PaymentStatus.PENDING,
     paymentMethod: PaymentMethod.PIX,
     amountPaid: 0,
-    notes: ''
+    notes: '',
+    dailyRate: 0
   }
 ];
 
@@ -242,7 +243,8 @@ const App: React.FC = () => {
       paymentStatus: res.paymentStatus,
       paymentMethod: res.paymentMethod,
       amountPaid: res.amountPaid,
-      notes: res.notes || ''
+      notes: res.notes || '',
+      dailyRate: res.dailyRate
     });
     
     // Update reservation status to Confirmed if we are moving to check-in

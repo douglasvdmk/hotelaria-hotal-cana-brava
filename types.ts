@@ -32,6 +32,7 @@ export interface Room {
   status: RoomStatus;
   currentGuestId?: string;
   extraCharges: number; // Sum of convenience store items
+  price: number;
 }
 
 export interface Guest {
@@ -49,6 +50,7 @@ export interface Guest {
   paymentMethod: PaymentMethod;
   amountPaid: number;
   notes: string;
+  dailyRate: number;
 }
 
 export interface Reservation {
@@ -65,6 +67,7 @@ export interface Reservation {
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
   amountPaid: number;
+  dailyRate: number;
 }
 
 export interface ReceptionNote {

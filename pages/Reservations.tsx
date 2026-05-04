@@ -29,7 +29,8 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
     notes: '',
     paymentStatus: PaymentStatus.PENDING,
     paymentMethod: PaymentMethod.PIX,
-    amountPaid: 0
+    amountPaid: 0,
+    dailyRate: 0
   });
 
   const resetForm = () => {
@@ -45,7 +46,8 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
       notes: '',
       paymentStatus: PaymentStatus.PENDING,
       paymentMethod: PaymentMethod.PIX,
-      amountPaid: 0
+      amountPaid: 0,
+      dailyRate: 0
     });
     setEditingId(null);
   };
@@ -101,7 +103,8 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
       notes: res.notes,
       paymentStatus: res.paymentStatus,
       paymentMethod: res.paymentMethod,
-      amountPaid: res.amountPaid
+      amountPaid: res.amountPaid,
+      dailyRate: res.dailyRate
     });
     setIsModalOpen(true);
   };
@@ -259,18 +262,30 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
               </div>
               <div>
                 <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Quarto</label>
-                <select value={newRes.roomId} onChange={e => setNewRes({...newRes, roomId: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white">
+                <select 
+                  value={newRes.roomId} 
+                  onChange={e => {
+                    const roomId = e.target.value;
+                    const room = rooms.find(r => r.id === roomId);
+                    setNewRes({...newRes, roomId, dailyRate: room ? room.price : 0});
+                  }} 
+                  className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white"
+                >
                   <option value="" className="bg-slate-800">Selecione...</option>
-                  {rooms.filter(r => r.status === RoomStatus.AVAILABLE || r.id === newRes.roomId).map(r => <option key={r.id} value={r.id} className="bg-slate-800">{r.number} ({r.type})</option>)}
+                  {rooms.filter(r => r.status === RoomStatus.AVAILABLE || r.id === newRes.roomId).map(r => (
+                    <option key={r.id} value={r.id} className="bg-slate-800">
+                      {r.number} ({r.type}) - {r.price > 0 ? `R$ ${r.price.toFixed(2)}` : 'S/ Preço'}
+                    </option>
+                  ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Data da Reserva</label>
                   <input type="date" value={newRes.date} onChange={e => setNewRes({...newRes, date: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Hora</label>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Hora Prevista</label>
                   <input type="time" value={newRes.time} onChange={e => setNewRes({...newRes, time: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
                 </div>
               </div>
@@ -286,9 +301,15 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
                   {Object.values(PaymentMethod).map(method => <option key={method} value={method} className="bg-slate-800">{method}</option>)}
                 </select>
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Valor Pago</label>
-                <input type="number" step="0.01" value={newRes.amountPaid} onChange={e => setNewRes({...newRes, amountPaid: parseFloat(e.target.value)})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Valor da Diária</label>
+                  <input type="number" step="0.01" value={newRes.dailyRate} onChange={e => setNewRes({...newRes, dailyRate: parseFloat(e.target.value) || 0})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Valor Já Pago</label>
+                  <input type="number" step="0.01" value={newRes.amountPaid} onChange={e => setNewRes({...newRes, amountPaid: parseFloat(e.target.value) || 0})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
+                </div>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Observações</label>
