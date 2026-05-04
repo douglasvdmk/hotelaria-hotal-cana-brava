@@ -216,7 +216,7 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
                         <span className="text-[10px] font-bold text-white/30">{guest.paymentMethod}</span>
                       </div>
                       <div className="text-sm font-black text-white">
-                        R$ {guest.amountPaid.toFixed(2)}
+                        R$ {(guest.amountPaid || 0).toFixed(2)}
                       </div>
                     </div>
                   </td>

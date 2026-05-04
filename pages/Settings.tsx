@@ -137,7 +137,7 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
                         <div className="flex flex-col">
                           <p className="text-xs font-black text-white/40 uppercase tracking-wider">{room.type}</p>
                           <p className="text-[10px] font-bold text-emerald-400 mt-0.5">
-                            {room.price > 0 ? `R$ ${room.price.toFixed(2)}` : 'Preço não definido'}
+                            {room.price > 0 ? `R$ ${(room.price || 0).toFixed(2)}` : 'Preço não definido'}
                           </p>
                         </div>
                       </div>
@@ -162,7 +162,7 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
                       <div>
                         <p className="font-bold text-white">{p.name}</p>
                         <div className="flex items-center gap-3">
-                          <p className="text-emerald-400 font-black text-sm">R$ {p.price.toFixed(2)}</p>
+                          <p className="text-emerald-400 font-black text-sm">R$ {(p.price || 0).toFixed(2)}</p>
                           <span className="text-[10px] text-white/30 font-bold uppercase tracking-wider">Estoque: {p.stock}</span>
                         </div>
                       </div>

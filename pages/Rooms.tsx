@@ -79,10 +79,10 @@ const Rooms: React.FC<RoomsProps> = ({ rooms, setRooms, guests, purchases, onChe
                       </div>
                       <span className="text-[10px] font-black uppercase tracking-widest leading-none">Extras</span>
                     </div>
-                    {room.price === 0 ? (
+                    {room.price === 0 || room.price === undefined ? (
                       <span className="text-[9px] font-bold text-rose-400 uppercase mt-1 tracking-wider">Valor não definido</span>
                     ) : (
-                      <span className="text-[9px] font-bold text-white/40 uppercase mt-1 tracking-wider">Diária: R$ {room.price.toFixed(2)}</span>
+                      <span className="text-[9px] font-bold text-white/40 uppercase mt-1 tracking-wider">Diária: R$ {(room.price || 0).toFixed(2)}</span>
                     )}
                   </div>
                   <span className="text-2xl font-black text-emerald-400 whitespace-nowrap">R$ {room.extraCharges.toFixed(2)}</span>
@@ -245,10 +245,10 @@ const Rooms: React.FC<RoomsProps> = ({ rooms, setRooms, guests, purchases, onChe
                           <tr className="border-b border-white/5">
                             <td className="px-6 py-4 text-white">
                               Diárias ({days} {days === 1 ? 'dia' : 'dias'})
-                              {selectedRoom.price === 0 ? (
+                              {selectedRoom.price === 0 || selectedRoom.price === undefined ? (
                                 <span className="block text-[10px] text-rose-400 font-bold uppercase tracking-wider mt-1">Aviso: Valor da diária não foi configurado</span>
                               ) : (
-                                <span className="block text-[10px] text-white/40 font-bold uppercase tracking-wider mt-1">Valor Unitário: R$ {selectedRoom.price.toFixed(2)}</span>
+                                <span className="block text-[10px] text-white/40 font-bold uppercase tracking-wider mt-1">Valor Unitário: R$ {(selectedRoom.price || 0).toFixed(2)}</span>
                               )}
                             </td>
                             <td className="px-6 py-4 text-right text-white">

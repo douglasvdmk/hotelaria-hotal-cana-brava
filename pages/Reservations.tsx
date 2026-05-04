@@ -196,7 +196,7 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
                         <span className="text-[10px] font-bold text-white/30">{res.paymentMethod}</span>
                       </div>
                       <div className="text-sm font-black text-white">
-                        R$ {res.amountPaid.toFixed(2)}
+                        R$ {(res.amountPaid || 0).toFixed(2)}
                       </div>
                     </div>
                   </td>

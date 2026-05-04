@@ -99,7 +99,7 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
                   <option value="" className="bg-slate-800">Selecionar...</option>
                   {products.map(p => (
                     <option key={p.id} value={p.id} className="bg-slate-800" disabled={p.stock <= 0}>
-                      {p.name} - R$ {p.price.toFixed(2)} ({p.stock} em estoque)
+                      {p.name} - R$ {(p.price || 0).toFixed(2)} ({p.stock} em estoque)
                     </option>
                   ))}
                 </select>
@@ -122,7 +122,7 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
                   <div>
                     <p className="font-bold text-white">{p.name}</p>
                     <div className="flex items-center gap-2">
-                       <p className="text-emerald-400 font-black text-sm">R$ {p.price.toFixed(2)}</p>
+                       <p className="text-emerald-400 font-black text-sm">R$ {(p.price || 0).toFixed(2)}</p>
                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase ${p.stock <= 5 ? 'bg-rose-500/20 text-rose-300' : 'bg-white/5 text-white/40'}`}>
                          ESTOQUE: {p.stock}
                        </span>
