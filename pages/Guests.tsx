@@ -298,40 +298,43 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
 
       {/* Simple Modal Overlay */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#955251] rounded-3xl w-full max-w-2xl shadow-2xl animate-in zoom-in duration-200 border border-white/10">
-            <div className="p-8">
-              <h3 className="text-xl font-bold text-white mb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-hidden">
+          <div className="bg-[#955251] rounded-3xl w-full max-w-5xl shadow-2xl animate-in zoom-in duration-200 border border-white/10 flex flex-col max-h-[95vh]">
+            <div className="p-6 border-b border-white/10 shrink-0">
+              <h3 className="text-xl font-bold text-white">
                 {editingId ? 'Editar Registro de Hóspede' : 'Novo Registro de Hóspede'}
               </h3>
-              
+            </div>
+            
+            <div className="p-8 overflow-y-auto flex-1">
               {validationError && (
                 <div className="mb-6 p-4 bg-rose-500/20 border border-rose-500/30 rounded-2xl text-rose-200 text-xs font-bold animate-in fade-in slide-in-from-top-2">
                   {validationError}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-bold text-white/60 mb-2">Nome Completo</label>
+              <form onSubmit={handleSubmit} id="guest-form" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
+                {/* Linha 1 */}
+                <div className="lg:col-span-1">
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Nome Completo</label>
                   <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
                 </div>
                 <div className="relative">
-                  <label className="block text-sm font-bold text-white/60 mb-2">CPF / RG</label>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">CPF / RG</label>
                   <input 
                     type="text" 
                     value={formData.document} 
                     onChange={e => handleDocumentChange(e.target.value)} 
                     className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" 
-                    placeholder="Comece a digitar o CPF..."
+                    placeholder="Documento..."
                   />
                   
                   {suggestions.length > 0 && (
                     <div className="absolute z-[60] left-0 right-0 mt-1 bg-[#4A2C2B] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
                        <div className="p-2 border-b border-white/5 bg-black/20">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Hóspedes Encontrados</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Sugestões</p>
                        </div>
-                       <ul className="max-h-48 overflow-y-auto">
+                       <ul className="max-h-48 overflow-y-auto font-sans">
                           {suggestions.map((g) => (
                             <li key={g.id}>
                                <button
@@ -341,8 +344,7 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
                                >
                                   <span className="font-bold text-white text-sm">{g.name}</span>
                                   <div className="flex items-center gap-3">
-                                     <span className="text-[10px] font-medium text-white/40">CPF: {g.document}</span>
-                                     {g.phone && <span className="text-[10px] font-medium text-white/40">Tel: {g.phone}</span>}
+                                     <span className="text-[10px] font-medium text-white/40">{g.document}</span>
                                   </div>
                                </button>
                             </li>
@@ -350,38 +352,19 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
                        </ul>
                     </div>
                   )}
-
-                  {duplicateGuest && (
-                    <div className="mt-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl animate-in zoom-in slide-in-from-top-2">
-                       <div className="flex items-start gap-4">
-                          <div className="p-2 bg-emerald-500/20 rounded-xl text-emerald-400">
-                             <UserPlus size={18} />
-                          </div>
-                          <div className="flex-1">
-                             <p className="text-sm font-bold text-white leading-tight">Este CPF já possui cadastro ({duplicateGuest.name}).</p>
-                             <p className="text-xs text-white/40 mt-1">Deseja carregar os dados salvos para este hóspede?</p>
-                             <button 
-                               type="button"
-                               onClick={() => selectSuggestedGuest(duplicateGuest)}
-                               className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all"
-                             >
-                                Carreagar Dados
-                             </button>
-                          </div>
-                       </div>
-                    </div>
-                  )}
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-white/60 mb-2">Telefone</label>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Telefone</label>
                   <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
                 </div>
+
+                {/* Linha 2 */}
                 <div>
-                  <label className="block text-sm font-bold text-white/60 mb-2">E-mail</label>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">E-mail</label>
                   <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-white/60 mb-2">Número do Quarto</label>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Número do Quarto</label>
                   <select 
                     value={formData.roomId} 
                     onChange={e => {
@@ -399,69 +382,105 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
                     ))}
                   </select>
                 </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-bold text-white/60 mb-2">Check-in Data</label>
-                    <input type="date" value={formData.checkInDate} onChange={e => setFormData({...formData, checkInDate: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black text-white/30 uppercase tracking-widest ml-1 mb-1">Hora do Check-in</label>
-                    <input type="time" value={formData.checkInTime} onChange={e => setFormData({...formData, checkInTime: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-bold text-white/60 mb-2">Check-out Data</label>
-                    <input type="date" value={formData.checkOutDate} onChange={e => setFormData({...formData, checkOutDate: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black text-white/30 uppercase tracking-widest ml-1 mb-1">Hora do Check-out</label>
-                    <input type="time" value={formData.checkOutTime} onChange={e => setFormData({...formData, checkOutTime: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
-                  </div>
-                </div>
                 <div>
-                  <label className="block text-sm font-bold text-white/60 mb-2">Status Pagamento</label>
-                  <select value={formData.paymentStatus} onChange={e => setFormData({...formData, paymentStatus: e.target.value as PaymentStatus})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Status Pagamento</label>
+                  <select value={formData.paymentStatus} onChange={e => setFormData({...formData, paymentStatus: e.target.value as PaymentStatus})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white font-bold">
                     {Object.values(PaymentStatus).map(status => <option key={status} value={status} className="bg-slate-800">{status}</option>)}
                   </select>
                 </div>
+
+                {/* Linha 3 - Estadia completa (4 colunas ideais, usando grid aninhado ou flex) */}
+                <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 bg-black/10 p-5 rounded-2xl border border-white/5">
+                  <div className="md:col-span-2 lg:col-span-4 mb-2">
+                    <h4 className="text-[11px] font-black text-blue-400 uppercase tracking-[3px]">Período da Estadia</h4>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[2px] mb-2">Check-in Data</label>
+                    <input type="date" value={formData.checkInDate} onChange={e => setFormData({...formData, checkInDate: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[2px] mb-2">Check-in Hora</label>
+                    <input type="time" value={formData.checkInTime} onChange={e => setFormData({...formData, checkInTime: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[2px] mb-2">Check-out Data</label>
+                    <input type="date" value={formData.checkOutDate} onChange={e => setFormData({...formData, checkOutDate: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[2px] mb-2">Check-out Hora</label>
+                    <input type="time" value={formData.checkOutTime} onChange={e => setFormData({...formData, checkOutTime: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                  </div>
+                </div>
+
+                {/* Linha 4 */}
                 <div>
-                  <label className="block text-sm font-bold text-white/60 mb-2">Método</label>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Método de Pagamento</label>
                   <select value={formData.paymentMethod} onChange={e => setFormData({...formData, paymentMethod: e.target.value as PaymentMethod})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white">
                     {Object.values(PaymentMethod).map(method => <option key={method} value={method} className="bg-slate-800">{method}</option>)}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-white/60 mb-2">Valor da Diária</label>
-                    <input type="number" step="0.01" value={formData.dailyRate} onChange={e => setFormData({...formData, dailyRate: parseFloat(e.target.value) || 0})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-white/60 mb-2">Valor Pago</label>
-                    <input type="number" step="0.01" value={formData.amountPaid} onChange={e => setFormData({...formData, amountPaid: parseFloat(e.target.value) || 0})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Valor da Diária</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 text-xs font-bold">R$</span>
+                    <input type="number" step="0.01" value={formData.dailyRate} onChange={e => setFormData({...formData, dailyRate: parseFloat(e.target.value) || 0})} className="w-full pl-10 pr-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white font-bold" />
                   </div>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-bold text-white/60 mb-2">Observações</label>
-                  <textarea rows={3} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Valor Total Pago</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400/40 text-xs font-bold">R$</span>
+                    <input type="number" step="0.01" value={formData.amountPaid} onChange={e => setFormData({...formData, amountPaid: parseFloat(e.target.value) || 0})} className="w-full pl-10 pr-4 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 text-emerald-400 font-bold" />
+                  </div>
                 </div>
-                <div className="md:col-span-2 flex justify-end gap-3 pt-4">
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      setIsModalOpen(false);
-                      resetForm();
-                    }} 
-                    className="px-6 py-3 font-bold text-white/50 hover:bg-white/5 rounded-xl"
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95">
-                    {editingId ? 'Salvar Alterações' : 'Salvar Hóspede'}
-                  </button>
+
+                {/* Linha 5 */}
+                <div className="lg:col-span-3">
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Observações Adicionais</label>
+                  <textarea rows={2} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full px-4 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white text-sm" placeholder="Ex: Preferências, restrições, etc..." />
                 </div>
+                
+                {duplicateGuest && (
+                  <div className="lg:col-span-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl animate-in zoom-in slide-in-from-top-2">
+                     <div className="flex items-start gap-4">
+                        <div className="p-2 bg-emerald-500/20 rounded-xl text-emerald-400">
+                           <UserPlus size={18} />
+                        </div>
+                        <div className="flex-1">
+                           <p className="text-sm font-bold text-white leading-tight">Este CPF já possui cadastro ({duplicateGuest.name}).</p>
+                           <p className="text-xs text-white/40 mt-1">Deseja carregar os dados salvos para este hóspede?</p>
+                           <button 
+                             type="button"
+                             onClick={() => selectSuggestedGuest(duplicateGuest)}
+                             className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all"
+                           >
+                              Carregar Dados
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+                )}
               </form>
+            </div>
+            
+            <div className="p-6 border-t border-white/10 flex justify-end gap-3 shrink-0">
+              <button 
+                type="button" 
+                onClick={() => {
+                  setIsModalOpen(false);
+                  resetForm();
+                }} 
+                className="px-6 py-3 font-bold text-white/50 hover:bg-white/5 rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                form="guest-form"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all active:scale-95"
+              >
+                {editingId ? 'Salvar Alterações' : 'Salvar Hóspede'}
+              </button>
             </div>
           </div>
         </div>

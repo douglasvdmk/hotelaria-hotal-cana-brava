@@ -249,106 +249,132 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#955251] rounded-[32px] w-full max-w-2xl shadow-2xl p-8 animate-in slide-in-from-bottom-4 border border-white/10">
-            <h3 className="text-2xl font-black text-white mb-8 tracking-tighter uppercase">
-              {editingId ? 'Editar Reserva' : 'Agendar Reserva'}
-            </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-hidden">
+          <div className="bg-[#955251] rounded-[32px] w-full max-w-5xl shadow-2xl animate-in slide-in-from-bottom-4 border border-white/10 flex flex-col max-h-[95vh]">
+            <div className="p-6 border-b border-white/10 shrink-0">
+              <h3 className="text-2xl font-black text-white tracking-tighter uppercase">
+                {editingId ? 'Editar Reserva' : 'Agendar Reserva'}
+              </h3>
+            </div>
 
-            {validationError && (
-              <div className="mb-6 p-4 bg-rose-500/20 border border-rose-500/30 rounded-2xl text-rose-200 text-xs font-bold animate-in fade-in slide-in-from-top-2">
-                {validationError}
-              </div>
-            )}
+            <div className="p-8 overflow-y-auto flex-1">
+              {validationError && (
+                <div className="mb-6 p-4 bg-rose-500/20 border border-rose-500/30 rounded-2xl text-rose-200 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                  {validationError}
+                </div>
+              )}
 
-            <form onSubmit={addReservation} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="md:col-span-2">
-                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Nome do Hóspede</label>
-                <input type="text" value={newRes.guestName} onChange={e => setNewRes({...newRes, guestName: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">CPF / RG</label>
-                <input type="text" value={newRes.document} onChange={e => setNewRes({...newRes, document: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Telefone</label>
-                <input type="text" value={newRes.phone} onChange={e => setNewRes({...newRes, phone: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">E-mail</label>
-                <input type="email" value={newRes.email} onChange={e => setNewRes({...newRes, email: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Quarto</label>
-                <select 
-                  value={newRes.roomId} 
-                  onChange={e => {
-                    const roomId = e.target.value;
-                    const room = rooms.find(r => r.id === roomId);
-                    setNewRes({...newRes, roomId, dailyRate: room ? room.price : 0});
-                  }} 
-                  className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white"
-                >
-                  <option value="" className="bg-slate-800">Selecione...</option>
-                  {rooms.filter(r => r.status === RoomStatus.AVAILABLE || r.id === newRes.roomId).map(r => (
-                    <option key={r.id} value={r.id} className="bg-slate-800">
-                      {r.number} ({r.type}) - {r.price > 0 ? `R$ ${r.price.toFixed(2)}` : 'S/ Preço'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Data da Reserva</label>
-                  <input type="date" value={newRes.date} onChange={e => setNewRes({...newRes, date: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
+              <form onSubmit={addReservation} id="reservation-form" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
+                {/* Linha 1 */}
+                <div className="lg:col-span-1">
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Nome do Hóspede</label>
+                  <input type="text" value={newRes.guestName} onChange={e => setNewRes({...newRes, guestName: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Hora Prevista</label>
-                  <input type="time" value={newRes.time} onChange={e => setNewRes({...newRes, time: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Status Pagamento</label>
-                <select value={newRes.paymentStatus} onChange={e => setNewRes({...newRes, paymentStatus: e.target.value as PaymentStatus})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white">
-                  {Object.values(PaymentStatus).map(status => <option key={status} value={status} className="bg-slate-800">{status}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Método</label>
-                <select value={newRes.paymentMethod} onChange={e => setNewRes({...newRes, paymentMethod: e.target.value as PaymentMethod})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white">
-                  {Object.values(PaymentMethod).map(method => <option key={method} value={method} className="bg-slate-800">{method}</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Valor da Diária</label>
-                  <input type="number" step="0.01" value={newRes.dailyRate} onChange={e => setNewRes({...newRes, dailyRate: parseFloat(e.target.value) || 0})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">CPF / RG</label>
+                  <input type="text" value={newRes.document} onChange={e => setNewRes({...newRes, document: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Valor Já Pago</label>
-                  <input type="number" step="0.01" value={newRes.amountPaid} onChange={e => setNewRes({...newRes, amountPaid: parseFloat(e.target.value) || 0})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Telefone</label>
+                  <input type="text" value={newRes.phone} onChange={e => setNewRes({...newRes, phone: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
                 </div>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Observações</label>
-                <textarea rows={2} value={newRes.notes} onChange={e => setNewRes({...newRes, notes: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
-              </div>
-              <div className="md:col-span-2 flex gap-4 pt-4">
-                <button 
-                  type="button" 
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    resetForm();
-                  }} 
-                  className="flex-1 px-6 py-4 font-bold text-white/50 hover:bg-white/5 rounded-2xl transition-all"
-                >
-                  Fechar
-                </button>
-                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-                  {editingId ? 'Salvar Alterações' : 'Confirmar'}
-                </button>
-              </div>
-            </form>
+
+                {/* Linha 2 */}
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">E-mail</label>
+                  <input type="email" value={newRes.email} onChange={e => setNewRes({...newRes, email: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Quarto Selecionado</label>
+                  <select 
+                    value={newRes.roomId} 
+                    onChange={e => {
+                      const roomId = e.target.value;
+                      const room = rooms.find(r => r.id === roomId);
+                      setNewRes({...newRes, roomId, dailyRate: room ? room.price : 0});
+                    }} 
+                    className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white"
+                  >
+                    <option value="" className="bg-slate-800">Selecione...</option>
+                    {rooms.filter(r => r.status === RoomStatus.AVAILABLE || r.id === newRes.roomId).map(r => (
+                      <option key={r.id} value={r.id} className="bg-slate-800">
+                        {r.number} ({r.type}) - {r.price > 0 ? `R$ ${r.price.toFixed(2)}` : 'S/ Preço'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Status da Reserva</label>
+                  <div className="flex items-center gap-2 px-5 py-3 bg-black/20 border border-white/5 rounded-xl text-xs font-black text-amber-400 uppercase tracking-widest">
+                    <Clock size={16} />
+                    {newRes.status === 'Pending' ? 'Pendente' : newRes.status === 'Confirmed' ? 'Confirmada' : 'Cancelada'}
+                  </div>
+                </div>
+
+                {/* Linha 3 */}
+                <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 bg-black/10 p-5 rounded-2xl border border-white/5">
+                  <div className="md:col-span-2 lg:col-span-4 mb-2">
+                    <h4 className="text-[11px] font-black text-blue-400 uppercase tracking-[3px]">Agendamento</h4>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[2px] mb-2">Data da Reserva</label>
+                    <input type="date" value={newRes.date} onChange={e => setNewRes({...newRes, date: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[2px] mb-2">Hora Prevista</label>
+                    <input type="time" value={newRes.time} onChange={e => setNewRes({...newRes, time: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[2px] mb-2">Status Financeiro</label>
+                    <select value={newRes.paymentStatus} onChange={e => setNewRes({...newRes, paymentStatus: e.target.value as PaymentStatus})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white">
+                      {Object.values(PaymentStatus).map(status => <option key={status} value={status} className="bg-slate-800">{status}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[2px] mb-2">Forma de Pagamento</label>
+                    <select value={newRes.paymentMethod} onChange={e => setNewRes({...newRes, paymentMethod: e.target.value as PaymentMethod})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white">
+                      {Object.values(PaymentMethod).map(method => <option key={method} value={method} className="bg-slate-800">{method}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Linha 4 */}
+                <div className="lg:col-span-1">
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Valor da Diária (R$)</label>
+                  <input type="number" step="0.01" value={newRes.dailyRate} onChange={e => setNewRes({...newRes, dailyRate: parseFloat(e.target.value) || 0})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-bold text-white text-lg" />
+                </div>
+                <div className="lg:col-span-2">
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Valor Já Pago / Adiantamento (R$)</label>
+                  <input type="number" step="0.01" value={newRes.amountPaid} onChange={e => setNewRes({...newRes, amountPaid: parseFloat(e.target.value) || 0})} className="w-full px-5 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl outline-none focus:ring-4 focus:ring-emerald-500/20 transition-all font-black text-emerald-400 text-lg" />
+                </div>
+
+                {/* Linha 5 */}
+                <div className="lg:col-span-3">
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Observações da Reserva</label>
+                  <textarea rows={2} value={newRes.notes} onChange={e => setNewRes({...newRes, notes: e.target.value})} className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 transition-all font-medium text-white text-sm" placeholder="Ex: Cama extra, restrições alimentares, etc..." />
+                </div>
+              </form>
+            </div>
+            
+            <div className="p-6 border-t border-white/10 flex gap-4 shrink-0">
+              <button 
+                type="button" 
+                onClick={() => {
+                  setIsModalOpen(false);
+                  resetForm();
+                }} 
+                className="flex-1 px-6 py-4 font-bold text-white/50 hover:bg-white/5 rounded-2xl transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                form="reservation-form"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+              >
+                {editingId ? 'Salvar Alterações' : 'Confirmar Reserva'}
+              </button>
+            </div>
           </div>
         </div>
       )}
