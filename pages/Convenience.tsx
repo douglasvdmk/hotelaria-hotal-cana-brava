@@ -5,36 +5,32 @@ import { ShoppingCart, Plus, Tag, History, Trash2 } from 'lucide-react';
 
 interface ConvenienceProps {
   products: Product[];
-  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  onAddProduct: (product: Product) => Promise<void>;
+  onDeleteProduct: (id: string) => Promise<void>;
   rooms: Room[];
   purchases: Purchase[];
   onAddPurchase: (purchase: Omit<Purchase, 'id' | 'timestamp'>) => void;
   primaryColor: string;
 }
 
-const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms, purchases, onAddPurchase, primaryColor }) => {
+const Convenience: React.FC<ConvenienceProps> = ({ products, onAddProduct, onDeleteProduct, rooms, purchases, onAddPurchase, primaryColor }) => {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [newProduct, setNewProduct] = useState({ name: '', price: '', stock: '' });
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const handleAddProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // No mandatory validation for product creation
     const product: Product = {
       id: Math.random().toString(36).substring(2, 11),
       name: newProduct.name,
       price: parseFloat(newProduct.price) || 0,
       stock: parseInt(newProduct.stock) || 0
     };
-    setProducts([...products, product]);
+    await onAddProduct(product);
     setNewProduct({ name: '', price: '', stock: '' });
     setIsAddProductModalOpen(false);
-  };
-
-  const handleDeleteProduct = (id: string) => {
-    setProducts(products.filter(p => p.id !== id));
   };
 
   const handlePurchase = (e: React.FormEvent) => {
@@ -131,7 +127,7 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
                   <div className="flex items-center gap-3">
                     <Tag size={16} className="text-white/20" />
                     <button 
-                      onClick={() => handleDeleteProduct(p.id)}
+                      onClick={() => onDeleteProduct(p.id)}
                       className="p-2 text-white/20 hover:text-rose-400 transition-colors"
                       title="Excluir produto"
                     >
@@ -149,7 +145,7 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="bg-[#955251] rounded-[40px] w-full max-w-md shadow-2xl p-10 border border-white/10">
             <h3 className="text-2xl font-black text-white mb-8 uppercase">Novo Produto</h3>
-            <form onSubmit={handleAddProduct} className="space-y-6">
+            <form onSubmit={handleAddProductSubmit} className="space-y-6">
               <input type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Nome do item" />
               <div className="grid grid-cols-2 gap-4">
                 <input type="number" step="0.01" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Preço R$" />

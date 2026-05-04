@@ -6,7 +6,7 @@ import { RefreshCw, Wrench, Eraser, Check, ShoppingCart, Calendar, User, Phone, 
 
 interface RoomsProps {
   rooms: Room[];
-  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
+  setRooms: (rooms: Room[]) => Promise<void>;
   guests: Guest[];
   purchases: Purchase[];
   onCheckOut: (roomId: string) => void;

@@ -5,7 +5,7 @@ import { StickyNote, AlertTriangle, Bell, Info, Plus, Trash2, Edit2, X } from 'l
 
 interface NotesProps {
   notes: ReceptionNote[];
-  setNotes: React.Dispatch<React.SetStateAction<ReceptionNote[]>>;
+  setNotes: (notes: ReceptionNote[]) => Promise<void>;
 }
 
 const Notes: React.FC<NotesProps> = ({ notes, setNotes }) => {

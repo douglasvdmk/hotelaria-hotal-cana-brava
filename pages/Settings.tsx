@@ -5,24 +5,38 @@ import { Settings as SettingsIcon, Plus, Trash2, Edit2, Layout, BedDouble, Palet
 
 interface SettingsProps {
   rooms: Room[];
-  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
+  onAddRoom: (room: Room) => Promise<void>;
+  onUpdateRoom: (room: Room) => Promise<void>;
+  onDeleteRoom: (id: string) => Promise<void>;
   hotelConfig: { name: string; primaryColor: string };
   setHotelConfig: React.Dispatch<React.SetStateAction<{ name: string; primaryColor: string }>>;
   products: Product[];
-  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  onAddProduct: (product: Product) => Promise<void>;
+  onUpdateProduct: (product: Product) => Promise<void>;
+  onDeleteProduct: (id: string) => Promise<void>;
 }
 
-const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHotelConfig, products, setProducts }) => {
+const Settings: React.FC<SettingsProps> = ({ 
+  rooms, onAddRoom, onUpdateRoom, onDeleteRoom, 
+  hotelConfig, setHotelConfig, 
+  products, onAddProduct, onUpdateProduct, onDeleteProduct 
+}) => {
   const [activeTab, setActiveTab] = useState<'hotel' | 'rooms' | 'products'>('hotel');
   const [isAddRoomOpen, setIsAddRoomOpen] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [newRoom, setNewRoom] = useState({ number: '', type: RoomType.SIMPLE, price: 0 });
 
-  const handleAddRoom = (e: React.FormEvent) => {
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [newProduct, setNewProduct] = useState({ name: '', price: 0, stock: 0 });
+
+  const handleAddRoomSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // No mandatory validation
     if (editingRoomId) {
-      setRooms(rooms.map(r => r.id === editingRoomId ? { ...r, number: newRoom.number, type: newRoom.type, price: newRoom.price } : r));
+      const room = rooms.find(r => r.id === editingRoomId);
+      if (room) {
+        await onUpdateRoom({ ...room, number: newRoom.number, type: newRoom.type, price: newRoom.price });
+      }
     } else {
       const room: Room = {
         id: Math.random().toString(36).substring(2, 11),
@@ -32,12 +46,34 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
         extraCharges: 0,
         price: newRoom.price
       };
-      setRooms([...rooms, room]);
+      await onAddRoom(room);
     }
     
     setNewRoom({ number: '', type: RoomType.SIMPLE, price: 0 });
     setIsAddRoomOpen(false);
     setEditingRoomId(null);
+  };
+
+  const handleAddProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingProductId) {
+      const prod = products.find(p => p.id === editingProductId);
+      if (prod) {
+        await onUpdateProduct({ ...prod, name: newProduct.name, price: newProduct.price, stock: newProduct.stock });
+      }
+    } else {
+      const prod: Product = {
+        id: Math.random().toString(36).substring(2, 11),
+        name: newProduct.name,
+        price: newProduct.price,
+        stock: newProduct.stock
+      };
+      await onAddProduct(prod);
+    }
+    
+    setNewProduct({ name: '', price: 0, stock: 0 });
+    setIsAddProductOpen(false);
+    setEditingProductId(null);
   };
 
   const handleEditRoom = (room: Room) => {
@@ -142,7 +178,7 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => handleEditRoom(room)} className="p-2 text-white/30 hover:text-blue-400"><Edit2 size={18} /></button>
-                        <button onClick={() => setRooms(rooms.filter(r => r.id !== room.id))} className="p-2 text-white/30 hover:text-rose-400"><Trash2 size={18} /></button>
+                        <button onClick={() => onDeleteRoom(room.id)} className="p-2 text-white/30 hover:text-rose-400"><Trash2 size={18} /></button>
                       </div>
                     </div>
                   ))}
@@ -152,8 +188,15 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
 
             {activeTab === 'products' && (
               <div>
-                <div className="p-8 border-b border-white/5">
-                  <h3 className="text-xl font-bold text-white">Gestão de Inventário</h3>
+                <div className="p-8 border-b border-white/5 flex justify-between items-center text-white">
+                  <h3 className="text-xl font-bold">Gestão de Inventário ({products.length})</h3>
+                  <button 
+                    onClick={() => setIsAddProductOpen(true)}
+                    className="text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"
+                    style={{ backgroundColor: hotelConfig.primaryColor }}
+                  >
+                    <Plus size={18} /> Novo Produto
+                  </button>
                 </div>
                 <div className="p-8 space-y-4">
                   {products.map(p => (
@@ -165,7 +208,14 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
                           <span className="text-[10px] text-white/30 font-bold uppercase tracking-wider">Estoque: {p.stock}</span>
                         </div>
                       </div>
-                      <button onClick={() => setProducts(products.filter(item => item.id !== p.id))} className="p-2 text-white/30 hover:text-rose-400"><Trash2 size={18} /></button>
+                      <div className="flex gap-2">
+                        <button onClick={() => {
+                          setNewProduct({ name: p.name, price: p.price, stock: p.stock });
+                          setEditingProductId(p.id);
+                          setIsAddProductOpen(true);
+                        }} className="p-2 text-white/30 hover:text-blue-400"><Edit2 size={18} /></button>
+                        <button onClick={() => onDeleteProduct(p.id)} className="p-2 text-white/30 hover:text-rose-400"><Trash2 size={18} /></button>
+                      </div>
                     </div>
                   ))}
                   {products.length === 0 && <p className="text-center py-10 text-white/30 italic">Nenhum produto cadastrado.</p>}
@@ -178,11 +228,11 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
 
       {isAddRoomOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#955251] rounded-[40px] w-full max-w-md shadow-2xl p-10 border border-white/10">
-            <h3 className="text-2xl font-black text-white mb-8 tracking-tighter uppercase">
+          <div className="bg-[#955251] rounded-[40px] w-full max-w-md shadow-2xl p-10 border border-white/10 text-white">
+            <h3 className="text-2xl font-black mb-8 tracking-tighter uppercase">
               {editingRoomId ? 'Editar Unidade' : 'Adicionar Unidade'}
             </h3>
-            <form onSubmit={handleAddRoom} className="space-y-6">
+            <form onSubmit={handleAddRoomSubmit} className="space-y-6">
               <div>
                 <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Número</label>
                 <input type="text" value={newRoom.number} onChange={e => setNewRoom({...newRoom, number: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white" />
@@ -213,6 +263,48 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
                 </button>
                 <button type="submit" className="flex-1 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg" style={{ backgroundColor: hotelConfig.primaryColor }}>
                   {editingRoomId ? 'Salvar' : 'Adicionar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isAddProductOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#955251] rounded-[40px] w-full max-w-md shadow-2xl p-10 border border-white/10 text-white">
+            <h3 className="text-2xl font-black mb-8 tracking-tighter uppercase">
+              {editingProductId ? 'Editar Produto' : 'Novo Produto'}
+            </h3>
+            <form onSubmit={handleAddProductSubmit} className="space-y-6">
+              <div>
+                <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Nome do Produto</label>
+                <input type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Preço (R$)</label>
+                  <input type="number" step="0.01" min="0" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: parseFloat(e.target.value) || 0})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Estoque Inicial</label>
+                  <input type="number" min="0" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: parseInt(e.target.value) || 0})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white" />
+                </div>
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsAddProductOpen(false);
+                    setEditingProductId(null);
+                    setNewProduct({ name: '', price: 0, stock: 0 });
+                  }} 
+                  className="flex-1 px-6 py-4 font-bold text-white/50"
+                >
+                  Voltar
+                </button>
+                <button type="submit" className="flex-1 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg" style={{ backgroundColor: hotelConfig.primaryColor }}>
+                  {editingProductId ? 'Salvar' : 'Adicionar'}
                 </button>
               </div>
             </form>

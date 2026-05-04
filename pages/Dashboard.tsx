@@ -8,9 +8,10 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 interface DashboardProps {
   rooms: Room[];
   guests: Guest[];
-  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
-  setGuests: React.Dispatch<React.SetStateAction<Guest[]>>;
+  setRooms: (rooms: Room[]) => Promise<void>;
+  setGuests: (guests: Guest[]) => Promise<void>;
   onNavigate: (page: string) => void;
+  fetchAllData?: () => Promise<void>;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ rooms, guests, onNavigate }) => {

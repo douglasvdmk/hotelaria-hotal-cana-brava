@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Room, Guest, Reservation, ReceptionNote, RoomStatus, RoomType, Product, Purchase, PaymentStatus, PaymentMethod } from './types';
-import { Hotel, LayoutGrid } from 'lucide-react';
+import { Hotel, LayoutGrid, Loader2 } from 'lucide-react';
+import { supabase } from './supabase';
 import Login from './pages/Login';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -60,61 +61,131 @@ const App: React.FC = () => {
   });
 
   // App State
-  const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
-  const [guests, setGuests] = useState<Guest[]>(INITIAL_GUESTS);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [guests, setGuests] = useState<Guest[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [notes, setNotes] = useState<ReceptionNote[]>([]);
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [prefilledGuest, setPrefilledGuest] = useState<Partial<Guest> | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // Persistence - Load from LocalStorage
+  // Persistence - Fetch from Supabase
+  const fetchData = async () => {
+    try {
+      const [
+        { data: roomsData },
+        { data: guestsData },
+        { data: resData },
+        { data: notesData },
+        { data: productsData },
+        { data: purchasesData },
+        { data: settingsData }
+      ] = await Promise.all([
+        supabase.from('rooms').select('*'),
+        supabase.from('guests').select('*'),
+        supabase.from('reservations').select('*'),
+        supabase.from('notes').select('*'),
+        supabase.from('products').select('*'),
+        supabase.from('purchases').select('*'),
+        supabase.from('settings').select('*').eq('id', 'hotel_config').single()
+      ]);
+
+      // Bootstrap logic: if DB is completely empty for key tables, insert initial data
+      if (!roomsData || roomsData.length === 0) {
+        await supabase.from('rooms').insert(INITIAL_ROOMS);
+        setRooms(INITIAL_ROOMS);
+      } else {
+        setRooms(roomsData as Room[]);
+      }
+
+      if (!guestsData || guestsData.length === 0) {
+        // Only bootstrap if it's the very first load and no guests ever
+        // We'll just show them for now, but not necessarily insert initial guest automatically to avoid pollution
+        setGuests(guestsData && guestsData.length === 0 ? [] : (guestsData as Guest[] || INITIAL_GUESTS));
+      } else {
+        setGuests(guestsData as Guest[]);
+      }
+
+      if (resData) setReservations(resData as Reservation[]);
+      if (notesData) setNotes(notesData as ReceptionNote[]);
+      
+      if (!productsData || productsData.length === 0) {
+        await supabase.from('products').insert(INITIAL_PRODUCTS);
+        setProducts(INITIAL_PRODUCTS);
+      } else {
+        setProducts(productsData as Product[]);
+      }
+
+      if (purchasesData) setPurchases(purchasesData as Purchase[]);
+      if (settingsData) {
+        setHotelConfig({ name: settingsData.name, primaryColor: settingsData.primaryColor });
+      } else {
+        // If no settings exist, the useEffect will create them soon
+        console.log('No settings found in Supabase, using defaults.');
+      }
+
+    } catch (error) {
+      console.error('Error fetching from Supabase:', error);
+      // Fallback to avoid empty screen
+      setRooms(INITIAL_ROOMS);
+      setProducts(INITIAL_PRODUCTS);
+      setGuests(INITIAL_GUESTS);
+    } finally {
+      setIsLoaded(true);
+    }
+  };
+
   useEffect(() => {
     const auth = localStorage.getItem('hotel_auth');
-    if (auth === 'true') setIsAuthenticated(true);
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+      fetchData();
+    } else {
+      setIsLoaded(true);
+    }
 
-    const savedConfig = localStorage.getItem('hotel_config');
-    if (savedConfig) setHotelConfig(JSON.parse(savedConfig));
+    // Set up real-time subscriptions
+    const roomsSub = supabase.channel('rooms-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => fetchData()).subscribe();
+    const guestsSub = supabase.channel('guests-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, () => fetchData()).subscribe();
+    const resSub = supabase.channel('res-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => fetchData()).subscribe();
+    const productsSub = supabase.channel('products-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchData()).subscribe();
+    const purchasesSub = supabase.channel('purchases-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'purchases' }, () => fetchData()).subscribe();
+    const notesSub = supabase.channel('notes-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () => fetchData()).subscribe();
+    const settingsSub = supabase.channel('settings-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => fetchData()).subscribe();
 
-    const savedRooms = localStorage.getItem('hotel_rooms');
-    if (savedRooms) setRooms(JSON.parse(savedRooms));
-
-    const savedGuests = localStorage.getItem('hotel_guests');
-    if (savedGuests) setGuests(JSON.parse(savedGuests));
-
-    const savedReservations = localStorage.getItem('hotel_reservations');
-    if (savedReservations) setReservations(JSON.parse(savedReservations));
-
-    const savedNotes = localStorage.getItem('hotel_notes');
-    if (savedNotes) setNotes(JSON.parse(savedNotes));
-
-    const savedProducts = localStorage.getItem('hotel_products');
-    if (savedProducts) setProducts(JSON.parse(savedProducts));
-
-    const savedPurchases = localStorage.getItem('hotel_purchases');
-    if (savedPurchases) setPurchases(JSON.parse(savedPurchases));
-    
-    setIsLoaded(true);
+    return () => {
+      supabase.removeChannel(roomsSub);
+      supabase.removeChannel(guestsSub);
+      supabase.removeChannel(resSub);
+      supabase.removeChannel(productsSub);
+      supabase.removeChannel(purchasesSub);
+      supabase.removeChannel(notesSub);
+      supabase.removeChannel(settingsSub);
+    };
   }, []);
 
-  // Persistence - Save to LocalStorage
+  // Update effect to save config to settings table
   useEffect(() => {
     if (isAuthenticated && isLoaded) {
-      localStorage.setItem('hotel_config', JSON.stringify(hotelConfig));
-      localStorage.setItem('hotel_rooms', JSON.stringify(rooms));
-      localStorage.setItem('hotel_guests', JSON.stringify(guests));
-      localStorage.setItem('hotel_reservations', JSON.stringify(reservations));
-      localStorage.setItem('hotel_notes', JSON.stringify(notes));
-      localStorage.setItem('hotel_products', JSON.stringify(products));
-      localStorage.setItem('hotel_purchases', JSON.stringify(purchases));
+      const saveConfig = async () => {
+        await supabase.from('settings').upsert({
+          id: 'hotel_config',
+          name: hotelConfig.name,
+          primaryColor: hotelConfig.primaryColor,
+          updated_at: new Date().toISOString()
+        });
+      };
+      saveConfig();
     }
-  }, [hotelConfig, rooms, guests, reservations, notes, products, purchases, isAuthenticated, isLoaded]);
+  }, [hotelConfig, isAuthenticated, isLoaded]);
 
   const handleLogin = (success: boolean) => {
     if (success) {
       setIsAuthenticated(true);
       localStorage.setItem('hotel_auth', 'true');
+      fetchData();
     }
   };
 
@@ -123,126 +194,181 @@ const App: React.FC = () => {
     localStorage.removeItem('hotel_auth');
   };
 
-  const addPurchase = (purchase: Omit<Purchase, 'id' | 'timestamp'>) => {
+  const addPurchase = async (purchaseData: Omit<Purchase, 'id' | 'timestamp'>) => {
+    setIsSyncing(true);
     const newPurchase: Purchase = {
-      ...purchase,
+      ...purchaseData,
       id: Math.random().toString(36).substring(2, 11),
       timestamp: Date.now(),
     };
-    setPurchases(prev => [...prev, newPurchase]);
-    setProducts(prev => prev.map(p => 
-      p.id === purchase.productId ? { ...p, stock: Math.max(0, p.stock - 1) } : p
-    ));
-    setRooms(prevRooms => prevRooms.map(room => 
-      room.id === purchase.roomId 
-        ? { ...room, extraCharges: (room.extraCharges || 0) + purchase.price }
-        : room
-    ));
-  };
 
-  const handleAddGuest = (newGuest: Guest) => {
-    setGuests(prev => [...prev, newGuest]);
-    if (newGuest.roomId) {
-      setRooms(prev => prev.map(r => r.id === newGuest.roomId ? { 
-        ...r, 
-        status: RoomStatus.OCCUPIED, 
-        currentGuestId: newGuest.id 
-      } : r));
+    try {
+      await Promise.all([
+        supabase.from('purchases').insert(newPurchase),
+        supabase.from('products').update({ stock: Math.max(0, products.find(p => p.id === purchaseData.productId)?.stock! - 1) }).eq('id', purchaseData.productId),
+        supabase.from('rooms').update({ 
+          extraCharges: (rooms.find(r => r.id === purchaseData.roomId)?.extraCharges || 0) + purchaseData.price 
+        }).eq('id', purchaseData.roomId)
+      ]);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
-  const handleUpdateGuest = (updatedGuest: Guest) => {
-    const oldGuest = guests.find(g => g.id === updatedGuest.id);
-    setGuests(prev => prev.map(g => g.id === updatedGuest.id ? updatedGuest : g));
-
-    if (oldGuest && oldGuest.roomId !== updatedGuest.roomId) {
-      // Room changed
-      setRooms(prev => prev.map(r => {
-        if (r.id === oldGuest.roomId) return { ...r, status: RoomStatus.AVAILABLE, currentGuestId: undefined };
-        if (r.id === updatedGuest.roomId) return { ...r, status: RoomStatus.OCCUPIED, currentGuestId: updatedGuest.id };
-        return r;
-      }));
-    } else if (updatedGuest.roomId) {
-      // Ensure room is marked occupied
-      setRooms(prev => prev.map(r => r.id === updatedGuest.roomId ? { 
-        ...r, 
-        status: RoomStatus.OCCUPIED, 
-        currentGuestId: updatedGuest.id 
-      } : r));
+  const handleAddGuest = async (newGuest: Guest) => {
+    setIsSyncing(true);
+    try {
+      await supabase.from('guests').insert(newGuest);
+      if (newGuest.roomId) {
+        await supabase.from('rooms').update({ 
+          status: RoomStatus.OCCUPIED, 
+          currentGuestId: newGuest.id 
+        }).eq('id', newGuest.roomId);
+      }
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
-  const handleAddReservation = (res: Reservation) => {
-    setReservations(prev => [...prev, res]);
-    if (res.roomId) {
-      setRooms(prev => prev.map(r => r.id === res.roomId ? { ...r, status: RoomStatus.RESERVED } : r));
+  const handleUpdateGuest = async (updatedGuest: Guest) => {
+    setIsSyncing(true);
+    try {
+      const oldGuest = guests.find(g => g.id === updatedGuest.id);
+      await supabase.from('guests').update(updatedGuest).eq('id', updatedGuest.id);
+
+      if (oldGuest && oldGuest.roomId !== updatedGuest.roomId) {
+        if (oldGuest.roomId) {
+          await supabase.from('rooms').update({ status: RoomStatus.AVAILABLE, currentGuestId: null }).eq('id', oldGuest.roomId);
+        }
+        if (updatedGuest.roomId) {
+          await supabase.from('rooms').update({ status: RoomStatus.OCCUPIED, currentGuestId: updatedGuest.id }).eq('id', updatedGuest.roomId);
+        }
+      } else if (updatedGuest.roomId) {
+        await supabase.from('rooms').update({ status: RoomStatus.OCCUPIED, currentGuestId: updatedGuest.id }).eq('id', updatedGuest.roomId);
+      }
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
-  const handleUpdateReservation = (updatedRes: Reservation) => {
-    const oldRes = reservations.find(r => r.id === updatedRes.id);
-    setReservations(prev => prev.map(r => r.id === updatedRes.id ? updatedRes : r));
-    
-    if (oldRes && oldRes.roomId !== updatedRes.roomId) {
-      setRooms(prev => prev.map(r => {
-        if (r.id === oldRes.roomId) return { ...r, status: RoomStatus.AVAILABLE };
-        if (r.id === updatedRes.roomId) return { ...r, status: RoomStatus.RESERVED };
-        return r;
-      }));
-    } else if (updatedRes.roomId) {
-      setRooms(prev => prev.map(r => r.id === updatedRes.roomId ? { ...r, status: RoomStatus.RESERVED } : r));
+  const handleAddReservation = async (res: Reservation) => {
+    setIsSyncing(true);
+    try {
+      await supabase.from('reservations').insert(res);
+      if (res.roomId) {
+        await supabase.from('rooms').update({ status: RoomStatus.RESERVED }).eq('id', res.roomId);
+      }
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
-  const handleDeleteReservation = (id: string) => {
-    const res = reservations.find(r => r.id === id);
-    setReservations(prev => prev.filter(r => r.id !== id));
-    if (res && res.roomId) {
-      setRooms(prev => prev.map(r => r.id === res.roomId ? { ...r, status: RoomStatus.AVAILABLE } : r));
+  const handleUpdateReservation = async (updatedRes: Reservation) => {
+    setIsSyncing(true);
+    try {
+      const oldRes = reservations.find(r => r.id === updatedRes.id);
+      await supabase.from('reservations').update(updatedRes).eq('id', updatedRes.id);
+      
+      if (oldRes && oldRes.roomId !== updatedRes.roomId) {
+        if (oldRes.roomId) await supabase.from('rooms').update({ status: RoomStatus.AVAILABLE }).eq('id', oldRes.roomId);
+        if (updatedRes.roomId) await supabase.from('rooms').update({ status: RoomStatus.RESERVED }).eq('id', updatedRes.roomId);
+      } else if (updatedRes.roomId) {
+        await supabase.from('rooms').update({ status: RoomStatus.RESERVED }).eq('id', updatedRes.roomId);
+      }
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
-  const handleDeleteGuest = (id: string) => {
-    const guest = guests.find(g => g.id === id);
-    setGuests(prev => prev.filter(g => g.id !== id));
-    if (guest && guest.roomId) {
-      setRooms(prev => prev.map(r => r.id === guest.roomId ? { ...r, status: RoomStatus.AVAILABLE } : r));
+  const handleDeleteReservation = async (id: string) => {
+    setIsSyncing(true);
+    try {
+      const res = reservations.find(r => r.id === id);
+      await supabase.from('reservations').delete().eq('id', id);
+      if (res && res.roomId) {
+        await supabase.from('rooms').update({ status: RoomStatus.AVAILABLE }).eq('id', res.roomId);
+      }
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
-  const handleCheckOut = (roomId: string) => {
-    const room = rooms.find(r => r.id === roomId);
-    if (!room || !room.currentGuestId) return;
-
-    // Update guest with current time as checkout
-    const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-    setGuests(prev => prev.map(g => g.id === room.currentGuestId ? {
-      ...g,
-      checkOutDate: dateStr,
-      checkOutTime: timeStr
-    } : g));
-
-    // Update room status to CLEANING and clear guest/charges
-    setRooms(prev => prev.map(r => r.id === roomId ? {
-      ...r,
-      status: RoomStatus.CLEANING,
-      currentGuestId: undefined,
-      extraCharges: 0
-    } : r));
+  const handleDeleteGuest = async (id: string) => {
+    setIsSyncing(true);
+    try {
+      const guest = guests.find(g => g.id === id);
+      await supabase.from('guests').delete().eq('id', id);
+      if (guest && guest.roomId) {
+        await supabase.from('rooms').update({ status: RoomStatus.AVAILABLE, currentGuestId: null }).eq('id', guest.roomId);
+      }
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
-  const handleMarkRoomCleaned = (roomId: string) => {
-    setRooms(prev => prev.map(r => 
-      r.id === roomId && r.status === RoomStatus.CLEANING 
-        ? { ...r, status: RoomStatus.AVAILABLE } 
-        : r
-    ));
+  const handleCheckOut = async (roomId: string) => {
+    setIsSyncing(true);
+    try {
+      const room = rooms.find(r => r.id === roomId);
+      if (!room || !room.currentGuestId) return;
+
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      await Promise.all([
+        supabase.from('guests').update({
+          checkOutDate: dateStr,
+          checkOutTime: timeStr
+        }).eq('id', room.currentGuestId),
+        supabase.from('rooms').update({
+          status: RoomStatus.CLEANING,
+          currentGuestId: null,
+          extraCharges: 0
+        }).eq('id', roomId)
+      ]);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
-  const handleConfirmReservation = (res: Reservation) => {
+  const handleMarkRoomCleaned = async (roomId: string) => {
+    setIsSyncing(true);
+    try {
+      await supabase.from('rooms').update({ status: RoomStatus.AVAILABLE }).eq('id', roomId).eq('status', RoomStatus.CLEANING);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleConfirmReservation = async (res: Reservation) => {
     setPrefilledGuest({
       name: res.guestName,
       document: res.document,
@@ -258,11 +384,141 @@ const App: React.FC = () => {
       dailyRate: res.dailyRate
     });
     
-    // Update reservation status to Confirmed if we are moving to check-in
-    setReservations(prev => prev.map(r => r.id === res.id ? { ...r, status: 'Confirmed' } : r));
-    
+    await supabase.from('reservations').update({ status: 'Confirmed' }).eq('id', res.id);
+    await fetchData();
     setCurrentPage('guests');
   };
+
+  const handleAddRoom = async (room: Room) => {
+    setIsSyncing(true);
+    try {
+      await supabase.from('rooms').insert(room);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleUpdateRoom = async (room: Room) => {
+    setIsSyncing(true);
+    try {
+      await supabase.from('rooms').update(room).eq('id', room.id);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleDeleteRoom = async (id: string) => {
+    setIsSyncing(true);
+    try {
+      await supabase.from('rooms').delete().eq('id', id);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleAddProduct = async (product: Product) => {
+    setIsSyncing(true);
+    try {
+      await supabase.from('products').insert(product);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleUpdateProduct = async (product: Product) => {
+    setIsSyncing(true);
+    try {
+      await supabase.from('products').update(product).eq('id', product.id);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    setIsSyncing(true);
+    try {
+      await supabase.from('products').delete().eq('id', id);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleUpdateNotes = async (updatedNotes: ReceptionNote[]) => {
+    setIsSyncing(true);
+    try {
+      // Find what changed
+      const [
+        { data: existingNotes }
+      ] = await Promise.all([
+        supabase.from('notes').select('id')
+      ]);
+      const existingIds = existingNotes?.map(n => n.id) || [];
+      const updatedIds = updatedNotes.map(n => n.id);
+
+      // Deletes
+      const toDelete = existingIds.filter(id => !updatedIds.includes(id));
+      if (toDelete.length > 0) await supabase.from('notes').delete().in('id', toDelete);
+
+      // Upserts
+      if (updatedNotes.length > 0) await supabase.from('notes').upsert(updatedNotes);
+      
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleUpdateRooms = async (updatedRooms: Room[]) => {
+    setIsSyncing(true);
+    try {
+      await supabase.from('rooms').upsert(updatedRooms);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleUpdateGuests = async (updatedGuests: Guest[]) => {
+    setIsSyncing(true);
+    try {
+      await supabase.from('guests').upsert(updatedGuests);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  if (!isLoaded) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-black">
+        <Loader2 className="animate-spin text-white" size={48} />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} hotelName={hotelConfig.name} primaryColor={hotelConfig.primaryColor} />;
@@ -271,7 +527,7 @@ const App: React.FC = () => {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard rooms={rooms} guests={guests} setRooms={setRooms} setGuests={setGuests} onNavigate={setCurrentPage} />;
+        return <Dashboard rooms={rooms} guests={guests} setRooms={handleUpdateRooms} setGuests={handleUpdateGuests} onNavigate={setCurrentPage} fetchAllData={fetchData} />;
       case 'guests':
         return (
           <Guests 
@@ -288,7 +544,7 @@ const App: React.FC = () => {
         return (
           <Rooms 
             rooms={rooms} 
-            setRooms={setRooms} 
+            setRooms={handleUpdateRooms} 
             guests={guests} 
             purchases={purchases}
             onCheckOut={handleCheckOut}
@@ -307,12 +563,13 @@ const App: React.FC = () => {
           />
         );
       case 'notes':
-        return <Notes notes={notes} setNotes={setNotes} />;
+        return <Notes notes={notes} setNotes={handleUpdateNotes} />;
       case 'convenience':
         return (
           <Convenience 
             products={products} 
-            setProducts={setProducts} 
+            onAddProduct={handleAddProduct}
+            onDeleteProduct={handleDeleteProduct}
             rooms={rooms} 
             onAddPurchase={addPurchase}
             purchases={purchases}
@@ -323,20 +580,30 @@ const App: React.FC = () => {
         return (
           <Settings 
             rooms={rooms} 
-            setRooms={setRooms} 
+            onAddRoom={handleAddRoom}
+            onUpdateRoom={handleUpdateRoom}
+            onDeleteRoom={handleDeleteRoom}
             hotelConfig={hotelConfig}
             setHotelConfig={setHotelConfig}
             products={products}
-            setProducts={setProducts}
+            onAddProduct={handleAddProduct}
+            onUpdateProduct={handleUpdateProduct}
+            onDeleteProduct={handleDeleteProduct}
           />
         );
       default:
-        return <Dashboard rooms={rooms} guests={guests} setRooms={setRooms} setGuests={setGuests} onNavigate={setCurrentPage} />;
+        return <Dashboard rooms={rooms} guests={guests} setRooms={handleUpdateRooms} setGuests={handleUpdateGuests} onNavigate={setCurrentPage} fetchAllData={fetchData} />;
     }
   };
 
   return (
     <div className="flex h-screen overflow-hidden bg-black">
+      {isSyncing && (
+        <div className="fixed top-4 right-4 z-[999] bg-blue-600 text-white rounded-full p-2 shadow-lg flex items-center gap-2 pr-4 animate-in fade-in slide-in-from-right-4">
+          <Loader2 className="animate-spin" size={16} />
+          <span className="text-[10px] font-black uppercase tracking-widest">Sincronizando...</span>
+        </div>
+      )}
       <Sidebar 
         currentPage={currentPage} 
         setCurrentPage={(page) => {
@@ -374,3 +641,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
