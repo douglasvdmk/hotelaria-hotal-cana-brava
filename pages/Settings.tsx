@@ -20,8 +20,7 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
 
   const handleAddRoom = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newRoom.number) return;
-
+    // No mandatory validation
     if (editingRoomId) {
       setRooms(rooms.map(r => r.id === editingRoomId ? { ...r, number: newRoom.number, type: newRoom.type, price: newRoom.price } : r));
     } else {
@@ -186,18 +185,18 @@ const Settings: React.FC<SettingsProps> = ({ rooms, setRooms, hotelConfig, setHo
             <form onSubmit={handleAddRoom} className="space-y-6">
               <div>
                 <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Número</label>
-                <input required type="text" value={newRoom.number} onChange={e => setNewRoom({...newRoom, number: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white" />
+                <input type="text" value={newRoom.number} onChange={e => setNewRoom({...newRoom, number: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Tipo</label>
-                  <select required value={newRoom.type} onChange={e => setNewRoom({...newRoom, type: e.target.value as RoomType})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white">
+                  <select value={newRoom.type} onChange={e => setNewRoom({...newRoom, type: e.target.value as RoomType})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white">
                     {Object.values(RoomType).map(type => <option key={type} value={type} className="bg-slate-800">{type}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-white/40 uppercase tracking-[2px] mb-2">Preço Diária</label>
-                  <input required type="number" step="0.01" min="0" value={newRoom.price} onChange={e => setNewRoom({...newRoom, price: parseFloat(e.target.value) || 0})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white" />
+                  <input type="number" step="0.01" min="0" value={newRoom.price} onChange={e => setNewRoom({...newRoom, price: parseFloat(e.target.value) || 0})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl outline-none font-bold text-white" />
                 </div>
               </div>
               <div className="flex gap-4 pt-4">

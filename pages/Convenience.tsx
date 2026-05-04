@@ -21,7 +21,7 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
 
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProduct.name || !newProduct.price || !newProduct.stock) return;
+    // No mandatory validation for product creation
     const product: Product = {
       id: Math.random().toString(36).substring(2, 11),
       name: newProduct.name,
@@ -88,14 +88,14 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
             <form onSubmit={handlePurchase} className="space-y-5">
               <div>
                 <label className="block text-[10px] font-black opacity-70 uppercase tracking-widest mb-2 text-white">Quarto Ocupado</label>
-                <select required value={selectedRoomId} onChange={e => setSelectedRoomId(e.target.value)} className="w-full bg-black/30 border border-white/20 text-white rounded-2xl p-4 outline-none font-bold">
+                <select value={selectedRoomId} onChange={e => setSelectedRoomId(e.target.value)} className="w-full bg-black/30 border border-white/20 text-white rounded-2xl p-4 outline-none font-bold">
                   <option value="" className="bg-slate-800">Selecionar...</option>
                   {occupiedRooms.map(r => <option key={r.id} value={r.id} className="bg-slate-800">Quarto {r.number}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-[10px] font-black opacity-70 uppercase tracking-widest mb-2 text-white">Produto</label>
-                <select required value={selectedProductId} onChange={e => setSelectedProductId(e.target.value)} className="w-full bg-black/30 border border-white/20 text-white rounded-2xl p-4 outline-none font-bold">
+                <select value={selectedProductId} onChange={e => setSelectedProductId(e.target.value)} className="w-full bg-black/30 border border-white/20 text-white rounded-2xl p-4 outline-none font-bold">
                   <option value="" className="bg-slate-800">Selecionar...</option>
                   {products.map(p => (
                     <option key={p.id} value={p.id} className="bg-slate-800" disabled={p.stock <= 0}>
@@ -150,10 +150,10 @@ const Convenience: React.FC<ConvenienceProps> = ({ products, setProducts, rooms,
           <div className="bg-[#955251] rounded-[40px] w-full max-w-md shadow-2xl p-10 border border-white/10">
             <h3 className="text-2xl font-black text-white mb-8 uppercase">Novo Produto</h3>
             <form onSubmit={handleAddProduct} className="space-y-6">
-              <input required type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Nome do item" />
+              <input type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Nome do item" />
               <div className="grid grid-cols-2 gap-4">
-                <input required type="number" step="0.01" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Preço R$" />
-                <input required type="number" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Estoque Inicial" />
+                <input type="number" step="0.01" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Preço R$" />
+                <input type="number" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-2xl font-bold text-white" placeholder="Estoque Inicial" />
               </div>
               <div className="flex gap-4">
                 <button type="button" onClick={() => setIsAddProductModalOpen(false)} className="flex-1 font-bold text-white/50">Voltar</button>

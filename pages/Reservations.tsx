@@ -63,23 +63,22 @@ const Reservations: React.FC<ReservationsProps> = ({ reservations, onAddReservat
     e.preventDefault();
     setValidationError(null);
 
-    if (!newRes.guestName || !newRes.date || !newRes.roomId) {
-      setValidationError('Por favor, preencha o Nome, Data e Quarto.');
-      return;
-    }
+    // No mandatory checks for guestName, date or roomId
+    
+    // Check for room conflicts on the same date only if date and roomId are present
+    if (newRes.roomId && newRes.date) {
+      const conflict = reservations.find(r => 
+        r.roomId === newRes.roomId && 
+        r.date === newRes.date && 
+        r.id !== editingId &&
+        r.status !== 'Cancelled'
+      );
 
-    // Check for room conflicts on the same date
-    const conflict = reservations.find(r => 
-      r.roomId === newRes.roomId && 
-      r.date === newRes.date && 
-      r.id !== editingId &&
-      r.status !== 'Cancelled'
-    );
-
-    if (conflict) {
-      const roomNum = rooms.find(rm => rm.id === newRes.roomId)?.number;
-      setValidationError(`O Quarto ${roomNum} já possui uma reserva ativa para o dia ${new Date(newRes.date + 'T00:00:00').toLocaleDateString('pt-BR')}.`);
-      return;
+      if (conflict) {
+        const roomNum = rooms.find(rm => rm.id === newRes.roomId)?.number;
+        setValidationError(`O Quarto ${roomNum} já possui uma reserva ativa para o dia ${new Date(newRes.date + 'T00:00:00').toLocaleDateString('pt-BR')}.`);
+        return;
+      }
     }
     
     if (editingId) {

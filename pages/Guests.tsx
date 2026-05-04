@@ -90,13 +90,8 @@ const Guests: React.FC<GuestsProps> = ({ guests, onAddGuest, onUpdateGuest, onDe
     e.preventDefault();
     setValidationError(null);
 
-    // Basic Validations
-    if (!formData.name || !formData.document || !formData.roomId || !formData.checkInDate) {
-      setValidationError('Por favor, preencha todos os campos obrigatórios (Nome, Documento, Quarto, Check-in).');
-      return;
-    }
-
-    if (formData.checkOutDate && formData.checkInDate > formData.checkOutDate) {
+    // Basic Validations - Removed mandatory requirement
+    if (formData.checkOutDate && formData.checkInDate && formData.checkInDate > formData.checkOutDate) {
       setValidationError('A data de check-out não pode ser anterior à data de check-in.');
       return;
     }
