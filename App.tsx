@@ -77,6 +77,7 @@ const App: React.FC = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
+      console.log('--- TESTE DE CONEXÃO REAL (fetchData) ---');
       const [
         { data: roomsData, error: roomsError },
         { data: guestsData, error: guestsError },
@@ -92,8 +93,17 @@ const App: React.FC = () => {
         supabase.from('notes').select('*'),
         supabase.from('products').select('*'),
         supabase.from('purchases').select('*'),
-        supabase.from('settings').select('*').eq('id', 'hotel_config').single()
+        supabase.from('settings').select('*').eq('id', 'hotel_config').maybeSingle() // Use maybeSingle to avoid errors if missing
       ]);
+
+      console.log('✅ Rooms connected:', !!roomsData);
+      console.log('✅ Guests connected:', !!guestsData);
+      console.log('✅ Reservations connected:', !!resData);
+      console.log('✅ Notes connected:', !!notesData);
+      console.log('✅ Products connected:', !!productsData);
+      console.log('✅ Purchases connected:', !!purchasesData);
+      console.log('✅ Settings connected:', !!settingsData || settingsError === null);
+      console.log('-----------------------------------------');
 
       const tableErrors = [
         { name: 'rooms', error: roomsError },
