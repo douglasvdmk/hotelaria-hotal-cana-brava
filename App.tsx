@@ -74,18 +74,6 @@ const App: React.FC = () => {
 
   // Persistence - Fetch from Supabase
   const fetchData = async () => {
-    // Diagnostic check
-    const testUrl = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rooms?select=*`;
-    try {
-      console.log('DIAGNOSTIC: Testing direct fetch to:', testUrl);
-      const testResp = await fetch(testUrl, {
-        headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY }
-      });
-      console.log('DIAGNOSTIC result:', testResp.status, testResp.statusText);
-    } catch (e: any) {
-      console.error('DIAGNOSTIC fetch FAILED:', e.message);
-    }
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -124,18 +112,15 @@ const App: React.FC = () => {
           const isRelationError = msg.includes('relation') || msg.includes('not found');
           
           let friendlyMsg = msg;
-          if (isNetworkError) friendlyMsg = 'ERRO DE CONEXÃO: Verifique se a URL do Supabase está correta e se você tem internet.';
+          if (isNetworkError) friendlyMsg = 'ERRO DE CONEXÃO: Verifique a configuração da Vercel.';
           if (isRelationError) {
-            friendlyMsg = `TABELA NÃO ENCONTRADA: A tabela "${t.name}" não existe no Supabase.`;
-            if (t.name === 'purchases') friendlyMsg += ' Verifique se o nome é "sales" ou "purchases" no seu banco.';
+            friendlyMsg = `TABELA NÃO ENCONTRADA: "${t.name}" no Supabase.`;
           }
           
           return `${t.name}: ${friendlyMsg}`;
         }).join(' | ');
         
-        const currentUrl = import.meta.env.VITE_SUPABASE_URL || 'NÃO DEFINIDA';
-        const errorMsg = `Problema no Supabase detectado. URL configurada: ${currentUrl}. Detalhes: ${details}`;
-        throw new Error(errorMsg);
+        throw new Error(details);
       }
 
       setRooms(roomsData && roomsData.length > 0 ? (roomsData as Room[]) : []);
