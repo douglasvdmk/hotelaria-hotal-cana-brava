@@ -71,18 +71,14 @@ const App: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   // Persistence - Fetch from Supabase
   const fetchData = async () => {
-    if (!supabase) {
-      setErrorStatus('Supabase não inicializado. Verifique as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY na Vercel.');
-      setIsLoaded(true);
-      return;
-    }
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      console.log('--- TESTE DE CONEXÃO REAL (fetchData) ---');
+      console.log('--- TESTE DE CONEXÃO REAL (Iniciando) ---');
       const [
         { data: roomsData, error: roomsError },
         { data: guestsData, error: guestsError },
@@ -98,39 +94,40 @@ const App: React.FC = () => {
         supabase.from('notes').select('*'),
         supabase.from('products').select('*'),
         supabase.from('purchases').select('*'),
-        supabase.from('settings').select('*').eq('id', 'hotel_config').maybeSingle() // Use maybeSingle to avoid errors if missing
+        supabase.from('settings').select('*').eq('id', 'hotel_config').maybeSingle()
       ]);
 
-      console.log('✅ Rooms connected:', !!roomsData);
-      console.log('✅ Guests connected:', !!guestsData);
-      console.log('✅ Reservations connected:', !!resData);
-      console.log('✅ Notes connected:', !!notesData);
-      console.log('✅ Products connected:', !!productsData);
-      console.log('✅ Purchases connected:', !!purchasesData);
-      console.log('✅ Settings connected:', !!settingsData || settingsError === null);
+      const results = [
+        { name: 'rooms', success: !!roomsData, error: roomsError },
+        { name: 'guests', success: !!guestsData, error: guestsError },
+        { name: 'reservations', success: !!resData, error: resError },
+        { name: 'notes', success: !!notesData, error: notesError },
+        { name: 'products', success: !!productsData, error: productsError },
+        { name: 'purchases', success: !!purchasesData, error: purchasesError },
+        { name: 'settings', success: !!settingsData || (settingsError === null || settingsError.code === 'PGRST116'), error: settingsError }
+      ];
+
+      results.forEach(r => {
+        if (r.success) {
+          console.log(`✅ ${r.name}: Conectado`);
+        } else {
+          console.error(`❌ ${r.name}: Erro - ${r.error?.message}`);
+        }
+      });
       console.log('-----------------------------------------');
+      setIsConnected(true);
 
-      const tableErrors = [
-        { name: 'rooms', error: roomsError },
-        { name: 'guests', error: guestsError },
-        { name: 'reservations', error: resError },
-        { name: 'notes', error: notesError },
-        { name: 'products', error: productsError },
-        { name: 'purchases', error: purchasesError },
-        { name: 'settings', error: (settingsError && settingsError.code !== 'PGRST116') ? settingsError : null }
-      ].filter(t => t.error);
+      const criticalErrors = results.filter(r => r.error && r.error.code !== 'PGRST116');
 
-      if (tableErrors.length > 0) {
-        const details = tableErrors.map(t => {
+      if (criticalErrors.length > 0) {
+        const details = criticalErrors.map(t => {
           const msg = t.error?.message || 'Erro desconhecido';
           const isNetworkError = msg.includes('Failed to fetch') || msg.includes('network error');
           const isRelationError = msg.includes('relation') || msg.includes('not found');
           
           let friendlyMsg = msg;
-          if (isNetworkError) friendlyMsg = 'ERRO DE CONEXÃO: Verifique a configuração da Vercel.';
-          if (isRelationError) {
-            friendlyMsg = `TABELA NÃO ENCONTRADA: "${t.name}" no Supabase.`;
-          }
+          if (isNetworkError) friendlyMsg = 'ERRO DE CONEXÃO: Verifique a configuração da URL/KEY do Supabase.';
+          if (isRelationError) friendlyMsg = `TABELA NÃO ENCONTRADA: "${t.name}" no Supabase. Execute o script SQL.`;
           
           return `${t.name}: ${friendlyMsg}`;
         }).join(' | ');
@@ -151,6 +148,7 @@ const App: React.FC = () => {
 
       setErrorStatus(null);
     } catch (error: any) {
+      setIsConnected(false);
       console.error('FULL SUPABASE ERROR OBJECT:', error);
       setErrorStatus(error.message || 'Erro de conexão com o banco de dados.');
     } finally {
@@ -168,26 +166,24 @@ const App: React.FC = () => {
     }
 
     // Set up real-time subscriptions
-    if (!supabase) return;
+    const subChannels: any[] = [];
+    
+    const setupSubscriptions = () => {
+      const roomsSub = supabase.channel('rooms-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => fetchData()).subscribe();
+      const guestsSub = supabase.channel('guests-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, () => fetchData()).subscribe();
+      const resSub = supabase.channel('res-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => fetchData()).subscribe();
+      const productsSub = supabase.channel('products-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchData()).subscribe();
+      const purchasesSub = supabase.channel('purchases-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'purchases' }, () => fetchData()).subscribe();
+      const notesSub = supabase.channel('notes-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () => fetchData()).subscribe();
+      const settingsSub = supabase.channel('settings-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => fetchData()).subscribe();
+      
+      subChannels.push(roomsSub, guestsSub, resSub, productsSub, purchasesSub, notesSub, settingsSub);
+    };
 
-    const roomsSub = supabase.channel('rooms-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => fetchData()).subscribe();
-    const guestsSub = supabase.channel('guests-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, () => fetchData()).subscribe();
-    const resSub = supabase.channel('res-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => fetchData()).subscribe();
-    const productsSub = supabase.channel('products-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchData()).subscribe();
-    const purchasesSub = supabase.channel('purchases-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'purchases' }, () => fetchData()).subscribe();
-    const notesSub = supabase.channel('notes-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () => fetchData()).subscribe();
-    const settingsSub = supabase.channel('settings-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => fetchData()).subscribe();
+    setupSubscriptions();
 
     return () => {
-      if (supabase) {
-        supabase.removeChannel(roomsSub);
-        supabase.removeChannel(guestsSub);
-        supabase.removeChannel(resSub);
-        supabase.removeChannel(productsSub);
-        supabase.removeChannel(purchasesSub);
-        supabase.removeChannel(notesSub);
-        supabase.removeChannel(settingsSub);
-      }
+      subChannels.forEach(channel => supabase.removeChannel(channel));
     };
   }, []);
 
@@ -668,6 +664,7 @@ const App: React.FC = () => {
         primaryColor={hotelConfig.primaryColor}
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
+        isConnected={isConnected}
       />
       
       <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">

@@ -11,9 +11,10 @@ interface SidebarProps {
   primaryColor: string;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  isConnected: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout, hotelName, primaryColor, isOpen, setIsOpen }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout, hotelName, primaryColor, isOpen, setIsOpen, isConnected }) => {
   return (
     <>
       {/* Mobile Overlay */}
@@ -80,6 +81,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout
             <span className="font-medium">{item.label}</span>
           </button>
         ))}
+
+        <div className="mx-4 my-2 p-3 rounded-xl bg-white/5 border border-white/10">
+          <div className="flex items-center gap-2">
+            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.6)]'}`} />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-white/70">
+              {isConnected ? 'Supabase Conectado' : 'Sem Conexão'}
+            </span>
+          </div>
+        </div>
+
         <button
           onClick={onLogout}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-rose-300 hover:bg-rose-500/20 transition-colors font-medium"

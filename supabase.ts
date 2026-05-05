@@ -5,27 +5,19 @@ const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim().replace(/\/
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ ATENÇÃO: As chaves do Supabase não foram detectadas no import.meta.env.');
+  throw new Error('❌ Variáveis do Supabase ausentes. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nas configurações do projeto.');
 }
 
-console.log('Supabase URL:', supabaseUrl);
-console.log('Supabase Key prefix:', supabaseAnonKey.substring(0, 15));
+// Log truncated values for security
+console.log('--- SUPABASE CONFIG ---');
+console.log('URL:', supabaseUrl);
+console.log('Protocol:', supabaseUrl.startsWith('https') ? '✅ HTTPS' : '❌ NOT HTTPS');
+console.log('Key prefix:', supabaseAnonKey.substring(0, 10) + '...');
+console.log('-----------------------');
 
-let supabaseClient: any = null;
-
-try {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('⚠️ ATENÇÃO: As chaves do Supabase não foram detectadas. O sistema funcionará em modo offline/demo.');
-  } else {
-    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-      },
-    });
-  }
-} catch (e) {
-  console.error('Erro ao inicializar Supabase:', e);
-}
-
-export const supabase = supabaseClient;
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
