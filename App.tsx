@@ -74,6 +74,18 @@ const App: React.FC = () => {
 
   // Persistence - Fetch from Supabase
   const fetchData = async () => {
+    // Diagnostic check
+    const testUrl = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rooms?select=*`;
+    try {
+      console.log('DIAGNOSTIC: Testing direct fetch to:', testUrl);
+      const testResp = await fetch(testUrl, {
+        headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY }
+      });
+      console.log('DIAGNOSTIC result:', testResp.status, testResp.statusText);
+    } catch (e: any) {
+      console.error('DIAGNOSTIC fetch FAILED:', e.message);
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -101,18 +113,28 @@ const App: React.FC = () => {
         { name: 'reservations', error: resError },
         { name: 'notes', error: notesError },
         { name: 'products', error: productsError },
-        { name: 'purchases', error: purchasesError }
+        { name: 'purchases', error: purchasesError },
+        { name: 'settings', error: (settingsError && settingsError.code !== 'PGRST116') ? settingsError : null }
       ].filter(t => t.error);
 
       if (tableErrors.length > 0) {
-        const isStripeKey = (supabase.auth as any)._key?.startsWith('sb_publishable_');
-        let errorMsg = `Erro nas tabelas: ${tableErrors.map(t => t.name).join(', ')}.`;
+        const details = tableErrors.map(t => {
+          const msg = t.error?.message || 'Erro desconhecido';
+          const isNetworkError = msg.includes('Failed to fetch') || msg.includes('network error');
+          const isRelationError = msg.includes('relation') || msg.includes('not found');
+          
+          let friendlyMsg = msg;
+          if (isNetworkError) friendlyMsg = 'ERRO DE CONEXÃO: Verifique se a URL do Supabase está correta e se você tem internet.';
+          if (isRelationError) {
+            friendlyMsg = `TABELA NÃO ENCONTRADA: A tabela "${t.name}" não existe no Supabase.`;
+            if (t.name === 'purchases') friendlyMsg += ' Verifique se o nome é "sales" ou "purchases" no seu banco.';
+          }
+          
+          return `${t.name}: ${friendlyMsg}`;
+        }).join(' | ');
         
-        if (isStripeKey || (import.meta.env.VITE_SUPABASE_ANON_KEY?.startsWith('sb_publishable_'))) {
-          errorMsg += " A chave 'VITE_SUPABASE_ANON_KEY' parece ser uma chave do Stripe (começa com sb_publishable_). Use a chave 'anon' public do painel do Supabase (começa com eyJ...).";
-        } else {
-          errorMsg += " Certifique-se de que elas existem e as políticas de RLS foram aplicadas.";
-        }
+        const currentUrl = import.meta.env.VITE_SUPABASE_URL || 'NÃO DEFINIDA';
+        const errorMsg = `Problema no Supabase detectado. URL configurada: ${currentUrl}. Detalhes: ${details}`;
         throw new Error(errorMsg);
       }
 
@@ -129,7 +151,7 @@ const App: React.FC = () => {
 
       setErrorStatus(null);
     } catch (error: any) {
-      console.error('Error fetching from Supabase:', error);
+      console.error('FULL SUPABASE ERROR OBJECT:', error);
       setErrorStatus(error.message || 'Erro de conexão com o banco de dados.');
     } finally {
       setIsLoaded(true);
