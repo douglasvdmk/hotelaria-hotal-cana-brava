@@ -74,6 +74,11 @@ const App: React.FC = () => {
 
   // Persistence - Fetch from Supabase
   const fetchData = async () => {
+    if (!supabase) {
+      setErrorStatus('Supabase não inicializado. Verifique as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY na Vercel.');
+      setIsLoaded(true);
+      return;
+    }
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -163,6 +168,8 @@ const App: React.FC = () => {
     }
 
     // Set up real-time subscriptions
+    if (!supabase) return;
+
     const roomsSub = supabase.channel('rooms-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => fetchData()).subscribe();
     const guestsSub = supabase.channel('guests-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, () => fetchData()).subscribe();
     const resSub = supabase.channel('res-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => fetchData()).subscribe();
@@ -172,26 +179,32 @@ const App: React.FC = () => {
     const settingsSub = supabase.channel('settings-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => fetchData()).subscribe();
 
     return () => {
-      supabase.removeChannel(roomsSub);
-      supabase.removeChannel(guestsSub);
-      supabase.removeChannel(resSub);
-      supabase.removeChannel(productsSub);
-      supabase.removeChannel(purchasesSub);
-      supabase.removeChannel(notesSub);
-      supabase.removeChannel(settingsSub);
+      if (supabase) {
+        supabase.removeChannel(roomsSub);
+        supabase.removeChannel(guestsSub);
+        supabase.removeChannel(resSub);
+        supabase.removeChannel(productsSub);
+        supabase.removeChannel(purchasesSub);
+        supabase.removeChannel(notesSub);
+        supabase.removeChannel(settingsSub);
+      }
     };
   }, []);
 
   // Update effect to save config to settings table
   useEffect(() => {
-    if (isAuthenticated && isLoaded) {
+    if (isAuthenticated && isLoaded && supabase) {
       const saveConfig = async () => {
-        await supabase.from('settings').upsert({
-          id: 'hotel_config',
-          name: hotelConfig.name,
-          primaryColor: hotelConfig.primaryColor,
-          updated_at: new Date().toISOString()
-        });
+        try {
+          await supabase.from('settings').upsert({
+            id: 'hotel_config',
+            name: hotelConfig.name,
+            primaryColor: hotelConfig.primaryColor,
+            updated_at: new Date().toISOString()
+          });
+        } catch (e) {
+          console.error("Error saving config:", e);
+        }
       };
       saveConfig();
     }
@@ -211,6 +224,7 @@ const App: React.FC = () => {
   };
 
   const addPurchase = async (purchaseData: Omit<Purchase, 'id' | 'timestamp'>) => {
+    if (!supabase) return;
     setIsSyncing(true);
     const newPurchase: Purchase = {
       ...purchaseData,
@@ -235,6 +249,7 @@ const App: React.FC = () => {
   };
 
   const handleAddGuest = async (newGuest: Guest) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       await supabase.from('guests').insert(newGuest);
@@ -253,6 +268,7 @@ const App: React.FC = () => {
   };
 
   const handleUpdateGuest = async (updatedGuest: Guest) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       const oldGuest = guests.find(g => g.id === updatedGuest.id);
@@ -277,6 +293,7 @@ const App: React.FC = () => {
   };
 
   const handleAddReservation = async (res: Reservation) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       await supabase.from('reservations').insert(res);
@@ -292,6 +309,7 @@ const App: React.FC = () => {
   };
 
   const handleUpdateReservation = async (updatedRes: Reservation) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       const oldRes = reservations.find(r => r.id === updatedRes.id);
@@ -312,6 +330,7 @@ const App: React.FC = () => {
   };
 
   const handleDeleteReservation = async (id: string) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       const res = reservations.find(r => r.id === id);
@@ -328,6 +347,7 @@ const App: React.FC = () => {
   };
 
   const handleDeleteGuest = async (id: string) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       const guest = guests.find(g => g.id === id);
@@ -344,6 +364,7 @@ const App: React.FC = () => {
   };
 
   const handleCheckOut = async (roomId: string) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       const room = rooms.find(r => r.id === roomId);
@@ -373,6 +394,7 @@ const App: React.FC = () => {
   };
 
   const handleMarkRoomCleaned = async (roomId: string) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       await supabase.from('rooms').update({ status: RoomStatus.AVAILABLE }).eq('id', roomId).eq('status', RoomStatus.CLEANING);
@@ -400,12 +422,14 @@ const App: React.FC = () => {
       dailyRate: res.dailyRate
     });
     
+    if (!supabase) return;
     await supabase.from('reservations').update({ status: 'Confirmed' }).eq('id', res.id);
     await fetchData();
     setCurrentPage('guests');
   };
 
   const handleAddRoom = async (room: Room) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       await supabase.from('rooms').insert(room);
@@ -418,6 +442,7 @@ const App: React.FC = () => {
   };
 
   const handleUpdateRoom = async (room: Room) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       await supabase.from('rooms').update(room).eq('id', room.id);
@@ -430,6 +455,7 @@ const App: React.FC = () => {
   };
 
   const handleDeleteRoom = async (id: string) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       await supabase.from('rooms').delete().eq('id', id);
@@ -442,6 +468,7 @@ const App: React.FC = () => {
   };
 
   const handleAddProduct = async (product: Product) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       await supabase.from('products').insert(product);
@@ -454,6 +481,7 @@ const App: React.FC = () => {
   };
 
   const handleUpdateProduct = async (product: Product) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       await supabase.from('products').update(product).eq('id', product.id);
@@ -466,6 +494,7 @@ const App: React.FC = () => {
   };
 
   const handleDeleteProduct = async (id: string) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       await supabase.from('products').delete().eq('id', id);
@@ -478,6 +507,7 @@ const App: React.FC = () => {
   };
 
   const handleUpdateNotes = async (updatedNotes: ReceptionNote[]) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       // Find what changed
@@ -486,11 +516,11 @@ const App: React.FC = () => {
       ] = await Promise.all([
         supabase.from('notes').select('id')
       ]);
-      const existingIds = existingNotes?.map(n => n.id) || [];
-      const updatedIds = updatedNotes.map(n => n.id);
+      const existingIds = (existingNotes as { id: string }[] | null)?.map((n: { id: string }) => n.id) || [];
+      const updatedIds = updatedNotes.map((n: ReceptionNote) => n.id);
 
       // Deletes
-      const toDelete = existingIds.filter(id => !updatedIds.includes(id));
+      const toDelete = existingIds.filter((id: string) => !updatedIds.includes(id));
       if (toDelete.length > 0) await supabase.from('notes').delete().in('id', toDelete);
 
       // Upserts
@@ -505,6 +535,7 @@ const App: React.FC = () => {
   };
 
   const handleUpdateRooms = async (updatedRooms: Room[]) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       await supabase.from('rooms').upsert(updatedRooms);
@@ -517,6 +548,7 @@ const App: React.FC = () => {
   };
 
   const handleUpdateGuests = async (updatedGuests: Guest[]) => {
+    if (!supabase) return;
     setIsSyncing(true);
     try {
       await supabase.from('guests').upsert(updatedGuests);
